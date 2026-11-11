@@ -1,0 +1,55 @@
+{
+  "stage": "domain-design",
+  "upstream_ids": [
+    "US1.1",
+    "US1.2",
+    "US1.3",
+    "US1.4",
+    "US1.5",
+    "US1.6",
+    "US1.7",
+    "US1.8"
+  ],
+  "coverage": [
+    {
+      "id": "US1.1",
+      "status": "OK",
+      "target": "AccessControl, OperatorInterface"
+    },
+    {
+      "id": "US1.2",
+      "status": "OK",
+      "target": "SettingsManagement, OperatorInterface"
+    },
+    {
+      "id": "US1.3",
+      "status": "OK",
+      "target": "TimerControl, OperatorInterface"
+    },
+    {
+      "id": "US1.4",
+      "status": "OK",
+      "target": "TimerControl"
+    },
+    {
+      "id": "US1.5",
+      "status": "OK",
+      "target": "TimerControl"
+    },
+    {
+      "id": "US1.6",
+      "status": "OK",
+      "target": "TimerControl"
+    },
+    {
+      "id": "US1.7",
+      "status": "OK",
+      "target": "TimerControl, BellTransport, OperatorInterface"
+    },
+    {
+      "id": "US1.8",
+      "status": "OK",
+      "target": "BellTransport, TimerControl"
+    }
+  ]
+}

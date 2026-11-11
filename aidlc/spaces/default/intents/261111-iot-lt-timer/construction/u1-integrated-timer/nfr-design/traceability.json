@@ -1,0 +1,152 @@
+{
+  "stage": "nfr-design",
+  "unit": "u1-integrated-timer",
+  "upstream_ids": [
+    "NFR1.1",
+    "NFR1.2",
+    "NFR1.3",
+    "NFR1.4",
+    "NFR3.1",
+    "NFR3.2",
+    "NFR3.3",
+    "NFR3.4",
+    "NFR3.5",
+    "NFR3.6",
+    "NFR2.1",
+    "NFR2.3",
+    "NFR2.2",
+    "NFR2.4",
+    "NFR2.5",
+    "NFR2.6",
+    "NFR5.1",
+    "NFR5.2",
+    "NFR5.3",
+    "NFR5.4",
+    "NFR5.5",
+    "NFR6.1",
+    "NFR6.2",
+    "NFR6.3"
+  ],
+  "coverage": [
+    {
+      "id": "NFR1.1",
+      "status": "OK",
+      "target": "performance-design.md: 30回の実機測定で最初の打音を予定時刻から2秒以内と評価する。保証ではなく目標。"
+    },
+    {
+      "id": "NFR1.2",
+      "status": "OK",
+      "target": "reliability-design.md: scheduledAt+5秒未満だけpublishを試し、Pico側でも期限検証する。"
+    },
+    {
+      "id": "NFR1.3",
+      "status": "OK",
+      "target": "performance-design.md: 同じIdempotency-Keyを保ち、10秒はクライアント待機上限として扱う。"
+    },
+    {
+      "id": "NFR1.4",
+      "status": "OK",
+      "target": "performance-design.md: 可視時2秒間隔、非表示時停止、復帰時即時取得、古いversion破棄。"
+    },
+    {
+      "id": "NFR3.1",
+      "status": "OK",
+      "target": "security-design.md: 全APIでtoken検証後principalからvenue権限を解決する。"
+    },
+    {
+      "id": "NFR3.2",
+      "status": "OK",
+      "target": "security-design.md: API、AWS間、Pico間をTLSで保護する。"
+    },
+    {
+      "id": "NFR3.3",
+      "status": "OK",
+      "target": "security-design.md: 秘密を成果物/API/ログに置かず保護された実行設定から取得する。"
+    },
+    {
+      "id": "NFR3.4",
+      "status": "OK",
+      "target": "security-design.md: API、データ、固定IoTトピックを最小権限で分離する。"
+    },
+    {
+      "id": "NFR3.5",
+      "status": "OK",
+      "target": "security-design.md: API境界入力検証と安全な公開エラーを適用する。"
+    },
+    {
+      "id": "NFR3.6",
+      "status": "OK",
+      "target": "security-design.md: 自己登録を無効化した招待制とし具体方式はInfrastructure Designで確定する。"
+    },
+    {
+      "id": "NFR2.1",
+      "status": "OK",
+      "target": "reliability-design.md: success前の耐久保存、条件付き更新、永続状態を正本にする。"
+    },
+    {
+      "id": "NFR2.3",
+      "status": "OK",
+      "target": "reliability-design.md: lease、generation、期限、永続状態の再検査で重複起床を許容する。"
+    },
+    {
+      "id": "NFR2.2",
+      "status": "OK",
+      "target": "performance-design.md: サーバーdeadline基準の非同期起床と再接続時の状態再取得。"
+    },
+    {
+      "id": "NFR2.4",
+      "status": "OK",
+      "target": "reliability-design.md: 期限起動に加え60秒周期の独立照合を提案し、失われた起床から65秒以内の回復を運用SLO候補として明示。Functional Designの最大5秒記述は変更承認が必要。"
+    },
+    {
+      "id": "NFR2.5",
+      "status": "OK",
+      "target": "reliability-design.md: 同一commandId/payloadを期限内再試行し、いずれかの試行がAWS受付ならsent、期限時も曖昧ならunknownとする推奨状態優先順位。既存functional-spec/rulesへの反映が必要。"
+    },
+    {
+      "id": "NFR2.6",
+      "status": "OK",
+      "target": "reliability-design.md: 期限・送信結果・通信失敗を明示し、成功表示と区別する"
+    },
+    {
+      "id": "NFR5.1",
+      "status": "OK",
+      "target": "observability-design.md: request/session/notification IDと状態遷移を構造化して相関する"
+    },
+    {
+      "id": "NFR5.2",
+      "status": "OK",
+      "target": "observability-design.md: IoT送信試行・受付・結果分類を実鳴動と分離して計測する"
+    },
+    {
+      "id": "NFR5.3",
+      "status": "OK",
+      "target": "observability-design.md: 運用ログを7日保持し削除する"
+    },
+    {
+      "id": "NFR5.4",
+      "status": "OK",
+      "target": "security-design.md: 秘密とrequest payloadをログ・メトリクスから除外する"
+    },
+    {
+      "id": "NFR5.5",
+      "status": "OK",
+      "target": "observability-design.md: pending/dispatching/期限超過・照合失敗を追跡する"
+    },
+    {
+      "id": "NFR6.1",
+      "status": "OK",
+      "target": "performance-design.md: test-afterの単体・主要境界結合試験を維持し、模擬IoT境界を使う"
+    },
+    {
+      "id": "NFR6.2",
+      "status": "OK",
+      "target": "performance-design.md: 80%行カバレッジを品質ゲートとする"
+    },
+    {
+      "id": "NFR6.3",
+      "status": "OK",
+      "target": "logical-components.md: CIの配置先を後続実装計画で確定する。統合前テスト・整形・静的解析を必須とする"
+    }
+  ]
+}

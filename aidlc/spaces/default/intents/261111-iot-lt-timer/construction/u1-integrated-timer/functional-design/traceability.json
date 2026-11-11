@@ -1,0 +1,128 @@
+{
+  "stage": "functional-design",
+  "unit": "u1-integrated-timer",
+  "upstream_ids": [
+    "AC1.1.1",
+    "AC1.1.2",
+    "AC1.1.3",
+    "AC1.2.1",
+    "AC1.2.2",
+    "AC1.2.3",
+    "AC1.2.4",
+    "AC1.3.1",
+    "AC1.3.2",
+    "AC1.3.3",
+    "AC1.3.4",
+    "AC1.7.1",
+    "AC1.7.2",
+    "AC1.7.3",
+    "AC1.7.4",
+    "AC1.8.1",
+    "AC1.8.2",
+    "AC1.8.3",
+    "AC1.8.4",
+    "AC1.8.5"
+  ],
+  "coverage": [
+    {
+      "id": "AC1.1.1",
+      "status": "OK",
+      "target": "BR1.1"
+    },
+    {
+      "id": "AC1.1.2",
+      "status": "OK",
+      "target": "BR1.1"
+    },
+    {
+      "id": "AC1.1.3",
+      "status": "OK",
+      "target": "BR1.1"
+    },
+    {
+      "id": "AC1.2.1",
+      "status": "N/A",
+      "target": "保存設定と再利用はU3 u3-mobile-experienceで実装"
+    },
+    {
+      "id": "AC1.2.2",
+      "status": "OK",
+      "target": "BR1.2"
+    },
+    {
+      "id": "AC1.2.3",
+      "status": "N/A",
+      "target": "保存失敗と下書き保持はU3 u3-mobile-experienceで実装"
+    },
+    {
+      "id": "AC1.2.4",
+      "status": "N/A",
+      "target": "完成画面の320px・キーボード対応はU3 u3-mobile-experience"
+    },
+    {
+      "id": "AC1.3.1",
+      "status": "OK",
+      "target": "BR1.3, BR1.4, BR1.5"
+    },
+    {
+      "id": "AC1.3.2",
+      "status": "OK",
+      "target": "BR1.5, BR1.11"
+    },
+    {
+      "id": "AC1.3.3",
+      "status": "OK",
+      "target": "BR1.3, BR1.4"
+    },
+    {
+      "id": "AC1.3.4",
+      "status": "OK",
+      "target": "BR1.5"
+    },
+    {
+      "id": "AC1.7.1",
+      "status": "OK",
+      "target": "BR1.7, BR1.9, BR1.10"
+    },
+    {
+      "id": "AC1.7.2",
+      "status": "OK",
+      "target": "BR1.9, BR1.10"
+    },
+    {
+      "id": "AC1.7.3",
+      "status": "OK",
+      "target": "BR1.6, BR1.8, BR1.9"
+    },
+    {
+      "id": "AC1.7.4",
+      "status": "OK",
+      "target": "BR1.13"
+    },
+    {
+      "id": "AC1.8.1",
+      "status": "OK",
+      "target": "BR1.7, BR1.12"
+    },
+    {
+      "id": "AC1.8.2",
+      "status": "N/A",
+      "target": "30通知の完成後実機統合確認はU3 u3-mobile-experience"
+    },
+    {
+      "id": "AC1.8.3",
+      "status": "N/A",
+      "target": "完成後の実機期限・重複試験はU3 u3-mobile-experience"
+    },
+    {
+      "id": "AC1.8.4",
+      "status": "N/A",
+      "target": "実機復帰時間とイベント用間隔の決定はU3 u3-mobile-experience"
+    },
+    {
+      "id": "AC1.8.5",
+      "status": "Deferred",
+      "target": "Build and Test: CI・整形・静的解析・行カバレッジ確認"
+    }
+  ]
+}
