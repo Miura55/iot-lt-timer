@@ -14,6 +14,12 @@
 
 APIの10秒はクライアントの待機上限であって、APIのSLOではない。通知起床からAWS受付までの内部目標は計測するが、NFR1.1の実機30回試験前に数値保証としない。AWS IoT受付とPicoの受信・物理打音を別の事象として記録する。
 
-## 保留
+## 品質検証の設計
 
-Functional Designでは期限内の送信と完了判定に関するMajor指摘が未解決である。特に予定時刻から5秒の命令期限と、期限・再照合失敗時のsession完了上限は、完了遅延の単一保証として整合していない。これらを修正・再レビューするまで本設計を実装上の完了SLOとして扱わない。
+- test-afterで各層実装後に単体試験を書き、主要境界（APIと永続ストア、待機起床とDispatcher、Dispatcherと模擬IoT受信）の結合試験を用意する。AWS実資格情報・実IoT Coreなしでも再現できるadapter境界を設ける。
+- 行カバレッジ80%はWeb UI・API・ドメイン・IoT adapterのアプリケーションTypeScript/JavaScriptを対象にCIで測定する。生成物とIaC定義は対象外とし、CI設定に除外範囲を明記する。
+- CIはformat/lint、型検査、unit、主要結合、coverageを順に実行する。いずれかの失敗またはcoverage 80%未満ならmainへの統合を拒否する。Infrastructure DesignでGitHub ActionsとOIDCの具体構成を定める。
+
+## 回復時間の合意
+
+Functional Designの正本と一致させる。通知0件は正常なdeadline起床でdeadline時に完了し、起床消失時はdeadline+65秒を回復目標とする。通知ありはdeadline経過かつ全通知終端後に完了し、起床消失時の目標はmax(deadline, 最新notification.expiresAt+65秒)。終了時通知ではexpiresAt=deadline+5秒のため、最悪の回復目標はdeadline+70秒となる。5秒は命令送信期限であり、回復遅延時に送信期限を延長しない。

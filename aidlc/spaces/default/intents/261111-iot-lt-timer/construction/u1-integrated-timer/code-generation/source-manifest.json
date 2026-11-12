@@ -1,0 +1,145 @@
+{
+  "stage": "code-generation",
+  "unit": "u1-integrated-timer",
+  "version": 1,
+  "writes": [
+    {
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "path": "apps/api/package.json"
+    },
+    {
+      "path": "apps/api/tsconfig.json"
+    },
+    {
+      "path": "apps/api/src/config.ts"
+    },
+    {
+      "path": "apps/api/src/main.ts"
+    },
+    {
+      "path": "apps/api/src/timer/dispatcher.ts"
+    },
+    {
+      "path": "apps/api/src/timer/dynamo-repository.ts"
+    },
+    {
+      "path": "apps/api/src/timer/http-handler.ts"
+    },
+    {
+      "path": "apps/api/src/timer/reconciler.ts"
+    },
+    {
+      "path": "apps/api/src/timer/repository.ts"
+    },
+    {
+      "path": "apps/api/src/timer/service.ts"
+    },
+    {
+      "path": "apps/api/src/timer/wake-registrar.ts"
+    },
+    {
+      "path": "apps/api/dist/"
+    },
+    {
+      "path": "apps/web/index.html"
+    },
+    {
+      "path": "apps/web/package.json"
+    },
+    {
+      "path": "apps/web/tsconfig.json"
+    },
+    {
+      "path": "apps/web/vite.config.ts"
+    },
+    {
+      "path": "apps/web/src/main.tsx"
+    },
+    {
+      "path": "apps/web/src/style.css"
+    },
+    {
+      "path": "apps/web/src/timer-app.tsx"
+    },
+    {
+      "path": "apps/web/dist/"
+    },
+    {
+      "path": "infra/cdk.json"
+    },
+    {
+      "path": "infra/package.json"
+    },
+    {
+      "path": "infra/tsconfig.json"
+    },
+    {
+      "path": "infra/src/app.ts"
+    },
+    {
+      "path": "infra/src/timer-stack.ts"
+    },
+    {
+      "path": "infra/dist/"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "package-lock.json"
+    },
+    {
+      "path": "packages/domain/package.json"
+    },
+    {
+      "path": "packages/domain/tsconfig.json"
+    },
+    {
+      "path": "packages/domain/src/index.ts"
+    },
+    {
+      "path": "packages/domain/src/timing.ts"
+    },
+    {
+      "path": "packages/domain/src/types.ts"
+    },
+    {
+      "path": "packages/domain/src/validation.ts"
+    },
+    {
+      "path": "packages/domain/src/wake.ts"
+    },
+    {
+      "path": "packages/domain/dist/"
+    },
+    {
+      "path": "tests/unit/u1/domain.test.ts"
+    },
+    {
+      "path": "tests/unit/u1/dispatcher.test.ts"
+    },
+    {
+      "path": "tests/unit/u1/service.test.ts"
+    },
+    {
+      "path": "tsconfig.base.json"
+    },
+    {
+      "path": "vitest.config.ts"
+    },
+    {
+      "path": "eslint.config.js"
+    },
+    {
+      "path": "prettier.config.js"
+    },
+    {
+      "path": "tests/unit/u1/repository.test.ts"
+    },
+    {
+      "path": "tests/unit/u1/wake-registrar.test.ts"
+    }
+  ]
+}

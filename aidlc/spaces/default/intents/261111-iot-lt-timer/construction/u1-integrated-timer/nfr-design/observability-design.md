@@ -12,4 +12,4 @@
 
 認証/認可・データストア・IoT接続・待機登録・照合の失敗はエラーコードと相関IDで追跡する。pending/dispatching通知が期限を超えた場合、sessionが完了条件待ちで残る場合、unknown/expiredが発生した場合をイベント前の運用確認対象にする。具体的な閾値、通知先、CloudWatch等の選定はInfrastructure Designで決める。アラートがないことはベル稼働・鳴動成功の根拠にしない。
 
-ブラウザー状態画面は最終取得時刻と更新失敗を示し、pending/dispatching/unknown/expired等の契約上の状態を成功と誤認させない。dispatchingの公開表示写像はFunctional Designで未確定のため、設計・実装前に確定する。
+ブラウザー状態画面は最終取得時刻と更新失敗を示し、pending/dispatching/unknown/expired等の契約上の状態を成功と誤認させない。内部dispatchingはC1の公開pendingへ写像し、画面ラベル「送信処理中」で区別する。AWS受付はデバイス受信・物理鳴動と別のイベントとして記録する。

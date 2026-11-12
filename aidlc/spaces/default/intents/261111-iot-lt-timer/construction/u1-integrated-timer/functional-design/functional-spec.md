@@ -46,7 +46,7 @@ erDiagram
 ```mermaid
 stateDiagram-v2
   [*] --> running : valid start accepted
-  running --> completed : deadline and all scheduled notifications terminal
+  running --> completed : deadline reached and all notifications terminal (or no notifications)
   running --> paused : U2 pause accepted
   paused --> running : U2 resume accepted
   running --> cancelled : U2 cancel accepted
@@ -54,9 +54,9 @@ stateDiagram-v2
   completed --> [*]
   cancelled --> [*]
 ```
-<!-- Text fallback: A valid start creates a running session. U2 may pause, resume, or cancel it. The session completes after its deadline and after all due notifications reach terminal outcomes. Completed and cancelled sessions are terminal. -->
+<!-- Text fallback: A valid start creates a running session. U2 may pause, resume, or cancel it. With no notifications it completes at its deadline; otherwise it completes after the deadline and all notifications reach terminal outcomes. Completed and cancelled sessions are terminal. -->
 
-`remainingSeconds`はdeadlineまでの残りを秒単位で返す。0秒通知が設定されている場合、タイマー表示は0になっても、その通知が送信済み・失敗・不明・期限切れ等で確定するまではセッションをrunningとして保持する。期限はscheduledAt+5秒なので、表示上の終了確定は最大5秒遅れ得る。画面は0秒で「終了ベル処理中」を表示し、完了扱いを早めない。0秒通知がなければdeadlineでcompletedにする。これによりC2のrunning状態再確認を保ったまま終了ベルを送信できる。
+`remainingSeconds`はdeadlineまでの残りを秒単位で返す。各sessionには通知の有無によらずdeadline起床を登録する。通知が0件なら正常起床時にdeadlineでcompletedにする。通知が1件以上ある場合はdeadline経過かつ全通知がsent/failed/unknown/expired/cancelledの終端状態になってからcompletedにする。表示が0になっても未確定通知があればrunningを保ち、画面は「終了ベル処理中」を表示する。通常の通知期限はscheduledAt+5秒。独立再照合は60秒ごとに行う。deadline起床が失われた場合、通知0件はdeadline+65秒以内に完了状態を保存する。通知がある場合はmax(deadline, 最新notification.expiresAt+65秒)以内に完了状態を保存する。終了時通知のexpiresAtはdeadline+5秒なので、回復時はdeadline+70秒までを目標とする。これらはサービスのハードリアルタイム保証ではなく、監視する運用目標である。命令のexpiresAtを超えてpublishを再開しない。
 
 各通知状態:
 
@@ -66,13 +66,13 @@ stateDiagram-v2
   pending --> dispatching : due and atomic claim
   pending --> expired : expiry reached before attempt
   pending --> cancelled : session cancelled
-  dispatching --> sent : broker accepted
-  dispatching --> failed : definitive rejection, no prior ambiguity
-  dispatching --> unknown : ambiguous result remains at expiry
+  dispatching --> sent : any attempt broker accepted
+  dispatching --> failed : all attempts rejected, none ambiguous
+  dispatching --> unknown : ambiguous result remains at expiry, no accepted attempt
   dispatching --> expired : no publish attempt before expiry
   dispatching --> pending : claim recovered, expiry still valid, no publish began
 ```
-<!-- Text fallback: A pending notification is atomically claimed when due. It ends as sent, failed, unknown, expired, or cancelled. A recovered claim may return to pending only if no publish began and expiry remains. -->
+<!-- Text fallback: A pending notification is atomically claimed when due. It ends as sent if any attempt is accepted, failed if all attempts are definitely rejected without ambiguity, unknown if ambiguity remains at expiry, expired if no attempt began, or cancelled. A recovered claim may return to pending only if no publish began and expiry remains. Internal dispatching is projected to public pending and labeled “送信処理中” in the UI. -->
 
 ## 主な処理手順
 
@@ -83,7 +83,7 @@ stateDiagram-v2
 3. `Idempotency-Key`と会場、主催者、経路、本文指紋を確認する。同一キー・同一内容の確定済み再試行には保存済み応答を返す。異なる本文なら409。別の進行中セッションがあれば作成しない。
 4. サーバーUTC時刻でsessionId、settingsSnapshot、deadline、version=1、generation=1、各notificationIdを生成する。全TimerSessionと通知を耐久保存してから成功を返す。
 5. 各通知に `scheduledAt = deadline - remainingAtRing` と `expiresAt = scheduledAt + 5秒` を設定する。remainingAtRing=durationSecondsは開始直後、0は終了時である。
-6. 待機機構への登録は永続化と同一トランザクションだと仮定しない。pending通知から冪等に再登録できるようにし、登録失敗は照合処理が再試行する。開始済みセッションを「存在しない」と誤報しない。
+6. セッションdeadlineと各通知の起床登録は、永続化と同一トランザクションだと仮定しない。TimerSession/ScheduledNotificationは予定登録状態、登録キー、登録試行番号を耐久保存する。登録キーは対象ID・generation・用途・試行番号から決定し、同じ試行の再送は同じキーと同じ入力を使う。受付結果が曖昧な場合は同一キーの登録状態を照合し、新しい試行番号を発行しない。登録失敗が確定した場合だけ条件付き更新で試行番号を増やして再登録する。複数の起床が存在しても、起床処理はDynamoDB相当の正本状態と条件付きclaimで重複副作用を防ぐ。照合処理は未登録・失敗・期限切れの予定を再試行する。耐久保存済みの開始を「存在しない」と誤報しない。
 7. 最初の状態応答はサーバー時刻を含む。ブラウザーは値を補間表示し、再表示時はGET stateで復元する。
 
 ### 起床とベル命令送信
@@ -92,16 +92,16 @@ stateDiagram-v2
 2. TimerControlは永続状態を読み直す。sessionがrunningで、generation一致、notificationがpending、scheduledAt到達、expiresAt未到達の場合だけ、条件付き更新で短いclaimを取得する。早すぎる起床は再予定し、古い・重複・取消済み・期限切れの起床は送信しない。
 3. commandIdにはnotificationIdを使い、command payloadを固定する。claim後にストアのトランザクション外でAWS IoT CoreへQoS 1・retain=falseで発行する。
 4. 受付が明確ならstatus=sent、dispatchOutcome=acceptedとする。永続化の再試行でも同じclaim tokenとcommandIdで重複適用を防ぐ。AWS受付はPicoの受信や実際の鳴動を意味しない。
-5. 明確な拒否はstatus=failedとする。結果が不明なら同じcommandId・同じpayloadで、残り期限内だけ短い間隔で再試行する。期限内に確定すればその結果、期限まで曖昧さが残ればstatus=unknownとする。再試行で新しいIDを作らない。
-6. 予定時刻から5秒以上経過した後は送信しない。試行前に期限切れならexpired。ambiguous結果を一度でも持つ通知は、期限後にexpiredへ変えずunknownにする。
+5. 結果が不明なら同じcommandId・同じpayloadで、残り期限内だけ短い間隔で再試行する。いずれかの試行で受付が確認できればstatus=sent。受付が一度もなく曖昧な試行が残ったまま期限を迎えればstatus=unknown。不受理だけが確定し曖昧な試行がなければstatus=failed。再試行で新しいIDを作らない。
+6. 予定時刻から5秒以上経過した後は送信しない。試行前に期限切れならexpired。起床消失や処理中claimの回復のため、独立した照合処理を60秒間隔で実行し、各notificationのexpiresAt+65秒以内に通知の終端状態を保存することを運用目標とする。照合は期限後のpublishを開始しない。
 7. MQTT QoS 1では重複配信の可能性があるため、Picoは同じcommandIdを重複実行しない。ベルの返信がないので、アプリはPicoのオンライン状態・受信・打音成功を表示しない。
 
 ### 障害回復と時刻端点
 
 - ブラウザー切断はsessionや待機処理を止めない。状態GETに失敗した画面は最終取得時刻と更新失敗を示し、古い応答でより新しい表示を上書きしない。
-- 処理中のclaimは期限付きである。claim期限後、照合処理は通知の期限・送信開始記録・送信結果を再確認する。未送信が確実で期限内なら同じIDの試行を継続し、送信の可能性が残るなら期限まで追跡しunknownにする。
+- 処理中のclaimは期限付きである。claim期限後、照合処理は通知の期限・送信開始記録・累積送信結果を再確認する。未送信が確実で期限内なら同じIDの試行を継続し、送信の可能性が残るなら期限まで追跡しunknownにする。60秒ごとの独立照合で、expiresAt+65秒以内に通知の終端結果を永続化することを目標とする。
 - スケジューラが遅れて起床し、まだ5秒の有効期限内なら送信を試みる。期限を過ぎた通知は送らず記録する。既に届いた古いMQTT命令をPicoが期限で破棄する契約も維持する。
-- 0秒の終了通知があるとき、sessionは通知の終端結果が確定するまでrunning・remainingSeconds=0を返す。画面は終了ベル処理中を明示する。終了通知が遅延して期限を過ぎた場合はunknownまたはexpiredとしてからsessionをcompletedにする。
+- 通知があるsessionはdeadline経過後かつ全通知の終端結果が確定するまでrunning・remainingSeconds=0を返す。通知0件ならdeadline起床でcompletedにする。画面は0秒で終了ベル処理中を明示する。期限起床が失われた場合の完了目標は、通知0件ならdeadline+65秒、通知ありならmax(deadline, 最新notification.expiresAt+65秒)である。終了時通知ではdeadline+70秒になる。正常起床なら通知結果確定後に完了し、復旧目標は通知期限や送信期限を延長しない。
 - U2が追加するpause/cancelは同じTimerControl所有権とversionを使う。送信claimが確定する前にpause/cancelが先行した場合は通知を無効化し、claimが先行した場合は送信結果または期限によるunknown確定まで操作応答を待つ。
 
 ## API・画面との対応
