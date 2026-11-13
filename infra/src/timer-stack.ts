@@ -14,6 +14,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as budgets from 'aws-cdk-lib/aws-budgets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
@@ -58,7 +59,21 @@ export class TimerStack extends Stack {
     api.addRoutes({ path: '/v1/config', methods: [apigwv2.HttpMethod.GET], integration: new integrations.HttpLambdaIntegration('GetRuntimeConfig', apiFunction) });
     api.addRoutes({ path: '/v1/state', methods: [apigwv2.HttpMethod.GET], integration: new integrations.HttpLambdaIntegration('GetState', apiFunction), authorizer: jwtAuthorizer });
     api.addRoutes({ path: '/v1/sessions', methods: [apigwv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration('StartSession', apiFunction), authorizer: jwtAuthorizer });
+    for (const action of ['pause', 'resume', 'cancel'] as const) api.addRoutes({ path: `/v1/sessions/{sessionId}/${action}`, methods: [apigwv2.HttpMethod.POST], integration: new integrations.HttpLambdaIntegration(`${action}Session`, apiFunction), authorizer: jwtAuthorizer });
     new events.Rule(this, 'MinuteReconciliation', { schedule: events.Schedule.rate(Duration.minutes(1)), targets: [new targets.LambdaFunction(reconcileFunction)] });
+    const dashboard = new cloudwatch.Dashboard(this, 'TimerOperationsDashboard', { dashboardName: `iot-lt-timer-${props.environmentName}` });
+    const metric = (metricName: string, operation: string, result: string) => new cloudwatch.Metric({ namespace: 'IoTLtTimer/U2', metricName, dimensionsMap: { Environment: props.environmentName, Operation: operation, Result: result }, statistic: 'sum', period: Duration.minutes(1) });
+    dashboard.addWidgets(new cloudwatch.GraphWidget({ title: 'Timer control and recovery events', left: [
+      ...(['pause', 'resume', 'cancel'] as const).map((operation) => metric('ControlAccepted', operation, 'accepted')),
+      ...(['pause', 'resume', 'cancel'] as const).map((operation) => metric('ControlConflict', operation, 'conflict')),
+      ...(['pause', 'resume', 'cancel'] as const).map((operation) => metric('ControlRejected', operation, 'rejected')),
+      ...(['pause', 'resume', 'cancel'] as const).map((operation) => metric('ControlForbidden', operation, 'forbidden')),
+      metric('OperationLeaseRecovered', 'reconcile', 'recovered'),
+      metric('OperationLeasePending', 'reconcile', 'pending'), metric('WakeRepair', 'reconcile', 'repaired'), metric('NotificationUnknown', 'notification', 'unknown'),
+    ] }));
+    const apiErrorAlarm = apiFunction.metricErrors({ period: Duration.minutes(5), statistic: 'sum' }).createAlarm(this, 'ApiErrorsAlarm', { threshold: 3, evaluationPeriods: 1, treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING, alarmDescription: 'Repeated API handler errors; check U2 operation logs.' });
+    const reconcileErrorAlarm = reconcileFunction.metricErrors({ period: Duration.minutes(5), statistic: 'sum' }).createAlarm(this, 'ReconcileErrorsAlarm', { threshold: 1, evaluationPeriods: 1, treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING, alarmDescription: 'Timer recovery reconciliation failed.' });
+    void apiErrorAlarm; void reconcileErrorAlarm;
     const bucket = new s3.Bucket(this, 'WebAssets', { blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, encryption: s3.BucketEncryption.S3_MANAGED, enforceSSL: true, removalPolicy: props.environmentName === 'prod' ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY, autoDeleteObjects: props.environmentName !== 'prod' });
     const distribution = new cloudfront.Distribution(this, 'WebDistribution', {
       defaultRootObject: 'index.html', defaultBehavior: { origin: origins.S3BucketOrigin.withOriginAccessControl(bucket), viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS, cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED, responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS },

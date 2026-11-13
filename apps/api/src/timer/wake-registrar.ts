@@ -17,10 +17,10 @@ export class StepFunctionsWakeRegistrar {
     const payload = { schemaVersion: 1, sessionId: session.id, generation: input.generation, purpose: input.purpose, notificationId: input.notificationId, scheduledAt: input.scheduledAt };
     const execution = deterministicWake(targetId, input.generation, input.purpose, current.attempt, payload);
     const wake = { ...current, executionName: execution.executionName, inputHash: execution.inputHash, status: 'pending' as const };
-    await this.repository.setWakeState(session.id, input.notificationId, wake, current.status);
+    await this.repository.setWakeState(session.id, input.notificationId, wake, current.status, input.generation);
     try {
       await this.client.send(new StartExecutionCommand({ stateMachineArn: this.stateMachineArn, name: execution.executionName, input: execution.input }));
-      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'registered', registeredAt: new Date().toISOString(), lastError: undefined }, 'pending');
+      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'registered', registeredAt: new Date().toISOString(), lastError: undefined }, 'pending', input.generation);
     } catch (error) {
       const name = (error as { name?: string }).name ?? '';
       if (name === 'ExecutionAlreadyExists') {
@@ -30,7 +30,7 @@ export class StepFunctionsWakeRegistrar {
       if (isAmbiguous(error)) {
         try {
           await this.client.send(new StartExecutionCommand({ stateMachineArn: this.stateMachineArn, name: execution.executionName, input: execution.input }));
-          await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'registered', registeredAt: new Date().toISOString() }, 'pending');
+          await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'registered', registeredAt: new Date().toISOString() }, 'pending', input.generation);
           return;
         } catch (retryError) {
           if ((retryError as { name?: string }).name === 'ExecutionAlreadyExists') {
@@ -41,7 +41,7 @@ export class StepFunctionsWakeRegistrar {
           error = retryError;
         }
       }
-      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'failed', lastError: name }, 'pending');
+      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, status: 'failed', lastError: name }, 'pending', input.generation);
       throw error;
     }
   }
@@ -55,7 +55,7 @@ export class StepFunctionsWakeRegistrar {
     const execution = deterministicWake(targetId, input.generation, input.purpose, wake.attempt, payload);
     try {
       await this.client.send(new StartExecutionCommand({ stateMachineArn: this.stateMachineArn, name: execution.executionName, input: execution.input }));
-      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, executionName: execution.executionName, inputHash: execution.inputHash, status: 'registered', registeredAt: new Date().toISOString() }, wake.status);
+      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, executionName: execution.executionName, inputHash: execution.inputHash, status: 'registered', registeredAt: new Date().toISOString() }, wake.status, input.generation);
     } catch (error) {
       if ((error as { name?: string }).name === 'ExecutionAlreadyExists') {
         await this.resolveExisting(session, input, wake, execution.executionName, execution.inputHash);
@@ -63,7 +63,7 @@ export class StepFunctionsWakeRegistrar {
       }
       if (isAmbiguous(error)) return;
       const nextWake = { ...wake, attempt: wake.attempt + 1, status: 'pending' as const, executionName: undefined, inputHash: undefined, lastError: (error as { name?: string }).name ?? 'TerminalStartFailure' };
-      await this.repository.setWakeState(session.id, input.notificationId, nextWake, wake.status);
+      await this.repository.setWakeState(session.id, input.notificationId, nextWake, wake.status, input.generation);
     }
   }
 
@@ -73,12 +73,12 @@ export class StepFunctionsWakeRegistrar {
     if (!found) return; // Keep the same durable attempt while the execution state is unknown.
     const status = found.status ?? '';
     if (status === 'RUNNING' || status === 'SUCCEEDED') {
-      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, executionName, inputHash, status: 'registered', registeredAt: new Date().toISOString(), lastError: undefined }, wake.status);
+      await this.repository.setWakeState(session.id, input.notificationId, { ...wake, executionName, inputHash, status: 'registered', registeredAt: new Date().toISOString(), lastError: undefined }, wake.status, input.generation);
       return;
     }
     if (status === 'FAILED' || status === 'TIMED_OUT' || status === 'ABORTED') {
       const nextWake = { ...wake, attempt: wake.attempt + 1, status: 'pending' as const, executionName: undefined, inputHash: undefined, lastError: status };
-      await this.repository.setWakeState(session.id, input.notificationId, nextWake, wake.status);
+      await this.repository.setWakeState(session.id, input.notificationId, nextWake, wake.status, input.generation);
     }
   }
 }

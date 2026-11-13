@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PublishCommand, IoTDataPlaneClient } from '@aws-sdk/client-iot-data-plane';
 import { canPublish, createRingCommand, terminalNotificationStatus, type Notification, type TimerSession } from '@lt-timer/domain';
 import type { TimerRepository } from './repository.js';
+import { operationEvent } from './observability.js';
 
 export interface DispatchEvent { sessionId: string; generation: number; purpose: 'deadline' | 'notification'; notificationId?: string }
 export interface BellPublisher { publish(topic: string, payload: string): Promise<'accepted' | 'rejected' | 'ambiguous'> }
@@ -27,7 +28,7 @@ export function createDispatcher(repository: TimerRepository, publisher: BellPub
     if (event.purpose === 'deadline') return completeIfDue(repository, session, now);
     if (!event.notificationId) throw new Error('notificationId is required');
     const candidate = session.notifications.find((row) => row.id === event.notificationId);
-    if (!candidate || !['pending', 'dispatching'].includes(candidate.status) || candidate.generation !== event.generation) return { outcome: 'duplicate-or-stale' };
+    if (!candidate || !candidate.scheduledAt || !candidate.expiresAt || !['pending', 'dispatching'].includes(candidate.status) || candidate.generation !== event.generation) return { outcome: 'duplicate-or-stale' };
     const scheduledAt = new Date(candidate.scheduledAt);
     const expiresAt = new Date(candidate.expiresAt);
     if (candidate.status === 'dispatching') {
@@ -73,6 +74,7 @@ export function createDispatcher(repository: TimerRepository, publisher: BellPub
       claimExpiresAt: undefined, updatedAt: finalNow.toISOString(),
     } as Notification;
     await repository.updateNotification(session.id, updated, 'dispatching');
+    if (finalStatus === 'unknown') operationEvent({ event: 'timer-notification-result-unknown', operation: 'notification', result: 'unknown', sessionId: session.id, notificationId: candidate.id, version: session.version, generation: event.generation, timestamp: finalNow });
     session = (await repository.getSession(session.id)) ?? session;
     await maybeComplete(repository, session, finalNow);
     return { outcome: finalStatus, accepted: cumulative === 'accepted' };

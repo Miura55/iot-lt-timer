@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { confirmSignIn, fetchAuthSession, signIn, signOut } from '@aws-amplify/auth';
+import { submitControlRequest, type ControlAction, type ControlAttemptStore } from './control-request.js';
 
 type Bell = { remainingSeconds: number; ringCount: 1 | 2 | 3 };
 type Notification = { id: string; remainingSeconds: number; ringCount: number; status: string };
-type SessionState = { id: string; state: string; remainingSeconds: number; notifications: Notification[] } | null;
+type SessionState = { id: string; version: number; state: string; remainingSeconds: number; notifications: Notification[] } | null;
 type StateResponse = { serverTime: string; session: SessionState };
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -20,6 +21,7 @@ export function App() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const requestSequence = useRef(0);
+  const pendingControlAttempt = useRef<ControlAttemptStore['current']>(null);
 
   const token = useCallback(async () => (await fetchAuthSession()).tokens?.idToken?.toString(), []);
   const loadState = useCallback(async () => {
@@ -66,6 +68,16 @@ export function App() {
 
   async function handleSignOut() { await signOut(); setAuthenticated(false); setState(null); }
 
+  async function handleControl(action: ControlAction) {
+    if (!session) return;
+    setLoading(true); setError('');
+    try {
+      const outcome = await submitControlRequest({ apiUrl: API_URL, sessionId: session.id, action, expectedVersion: session.version, token: await token(), pendingAttempt: pendingControlAttempt, refreshState: loadState });
+      if (outcome.status === 'in-progress') setError('操作を確認中です。しばらくしてから同じ操作を再試行してください。');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : '操作を完了できませんでした。'); }
+    finally { setLoading(false); }
+  }
+
   async function handleStart(event: React.FormEvent) {
     event.preventDefault(); setError(''); setLoading(true);
     try {
@@ -93,9 +105,10 @@ export function App() {
   const canStart = !session || ['completed', 'cancelled'].includes(session.state);
   return <main className="shell"><header className="topbar"><div><p className="eyebrow">EVENT TIMER</p><h1>LTベルタイマー</h1></div><button data-testid="logout-button" className="text-button" onClick={() => void handleSignOut()}>ログアウト</button></header>
     {error && <div className="notice error" role="alert">{error}</div>}
-    {session && !canStart ? <section className="card live" aria-live="polite"><div className="live-head"><span className="pill">{session.state === 'running' ? '実行中' : session.state}</span><span className="muted">サーバー時刻で管理</span></div>
+    {session && !canStart ? <section className="card live" aria-live="polite"><div className="live-head"><span className="pill">{session.state === 'running' ? '実行中' : session.state === 'paused' ? '一時停止中' : session.state}</span><span className="muted">サーバー時刻で管理</span></div>
       <p className="timer" data-testid="remaining-time">{formatRemaining(session.remainingSeconds)}</p><p className="muted">残り時間</p>
       {session.remainingSeconds === 0 && <p className="notice">終了ベルの処理を確認中です</p>}
+      <TimerControls state={session} loading={loading} onAction={(action) => void handleControl(action)} />
       <h2>ベル予定</h2><NotificationList notifications={session.notifications}/></section> : <section className="card">
       <p className="eyebrow">NEW TALK</p><h2>タイマーを設定</h2><form onSubmit={(event) => void handleStart(event)} className="stack">
         <label>発表時間（秒）<input data-testid="duration-input" type="number" min="1" max="10800" step="1" required value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
@@ -113,6 +126,14 @@ export function App() {
   function updateBell(index: number, key: keyof Bell, value: number) {
     setBells((current) => current.map((bell, i) => i === index ? { ...bell, [key]: value } : bell));
   }
+}
+
+export function TimerControls({ state, loading, onAction }: { state: NonNullable<SessionState>; loading: boolean; onAction: (action: 'pause' | 'resume' | 'cancel') => void }) {
+  return <div className="controls" aria-label="タイマー操作">
+    {state.state === 'running' && <button data-testid="timer-pause-button" type="button" className="secondary" disabled={loading} onClick={() => onAction('pause')}>一時停止</button>}
+    {state.state === 'paused' && <button data-testid="timer-resume-button" type="button" className="secondary" disabled={loading} onClick={() => onAction('resume')}>再開</button>}
+    {['running', 'paused'].includes(state.state) && <button data-testid="timer-cancel-button" type="button" className="danger" disabled={loading} onClick={() => onAction('cancel')}>キャンセル</button>}
+  </div>;
 }
 
 function NotificationList({ notifications }: { notifications: Notification[] }) {

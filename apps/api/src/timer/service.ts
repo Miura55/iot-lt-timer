@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { computeDeadline, createNotificationTimes, validateSettings, type Notification, type TimerSession } from '@lt-timer/domain';
+import { applyControlTransition, ControlTransitionError, computeDeadline, createNotificationTimes, validateSettings, type ControlRoute, type Notification, type PendingOperation, type TimerSession } from '@lt-timer/domain';
 import type { TimerRepository } from './repository.js';
 import { StepFunctionsWakeRegistrar } from './wake-registrar.js';
 import { payloadHash } from './wake-registrar.js';
+import { operationEvent } from './observability.js';
 
 export class HttpError extends Error {
   constructor(readonly statusCode: number, readonly code: string, message = code) { super(message); }
@@ -45,7 +46,7 @@ export async function startTimer(args: { repository: TimerRepository; registrar:
   }
   const registrations = [
     registrar.register(session, { targetId: session.id, generation: 1, purpose: 'deadline', scheduledAt: session.deadline! }),
-    ...notifications.map((notification) => registrar.register(session, { targetId: notification.id, generation: 1, purpose: 'notification', notificationId: notification.id, scheduledAt: notification.scheduledAt })),
+    ...notifications.map((notification) => registrar.register(session, { targetId: notification.id, generation: 1, purpose: 'notification', notificationId: notification.id, scheduledAt: notification.scheduledAt! })),
   ];
   await Promise.allSettled(registrations);
   return { statusCode: 201, body: state };
@@ -57,11 +58,62 @@ export async function getTimerState(repository: TimerRepository, venueId: string
   const remainingSeconds = session.state === 'running' && session.deadline ? Math.max(0, Math.ceil((Date.parse(session.deadline) - now.getTime()) / 1_000)) : session.remainingSeconds;
   const terminal = new Set(['sent', 'failed', 'expired', 'cancelled', 'unknown']);
   const isComplete = session.state === 'running' && session.deadline && Date.parse(session.deadline) <= now.getTime() && session.notifications.every((notification) => terminal.has(notification.status));
-  if (isComplete) {
+  if (isComplete && !session.pendingOperation) {
     session = { ...session, state: 'completed', remainingSeconds: 0, deadline: null, version: session.version + 1, updatedAt: now.toISOString() };
     await repository.updateSession(session);
   }
   return serializeSession(session, now, remainingSeconds);
+}
+
+export async function controlTimer(args: { repository: TimerRepository; registrar: StepFunctionsWakeRegistrar; principalId: string; sessionId: string; route: ControlRoute; idempotencyKey: string; expectedVersion: number; venueId: string; now?: Date; requestId?: string }) {
+  const { repository, registrar, principalId, sessionId, route, idempotencyKey, venueId } = args;
+  const now = args.now ?? new Date();
+  if (!(await repository.getGrant(principalId, venueId, 'operate'))) throw new HttpError(403, 'FORBIDDEN');
+  const fingerprint = payloadHash({ principalId, route, sessionId, expectedVersion: args.expectedVersion });
+  const prior = await repository.findIdempotent(idempotencyKey, route, fingerprint);
+  if (prior === 'conflict') throw new HttpError(409, 'IDEMPOTENCY_CONFLICT');
+  if (prior) return { statusCode: prior.statusCode, body: prior.response ?? { code: 'IN_PROGRESS' } };
+  const session = await repository.getSession(sessionId);
+  if (!session || session.venueId !== venueId) throw new HttpError(404, 'NOT_FOUND');
+  if (session.pendingOperation) {
+    if (session.pendingOperation.idempotencyKey === idempotencyKey && session.pendingOperation.requestFingerprint === fingerprint) throw new HttpError(409, 'IN_PROGRESS');
+    throw new HttpError(409, 'VERSION_CONFLICT');
+  }
+  if (session.version !== args.expectedVersion) throw new HttpError(409, 'VERSION_CONFLICT');
+  const pending: PendingOperation = { idempotencyKey, sessionId, principalId, route, expectedVersion: args.expectedVersion,
+    requestFingerprint: fingerprint, leaseToken: randomUUID(), leaseExpiresAt: new Date(now.getTime() + 30_000).toISOString() };
+  if (!(await repository.reserveOperation(sessionId, args.expectedVersion, session.state, pending))) throw new HttpError(409, 'VERSION_CONFLICT');
+  return recoverControlOperation(repository, registrar, sessionId, now, pending.leaseToken, args.requestId);
+}
+
+export async function recoverControlOperation(repository: TimerRepository, registrar: StepFunctionsWakeRegistrar, sessionId: string, now = new Date(), expectedLeaseToken?: string, requestId?: string) {
+  const current = await repository.getSession(sessionId);
+  const pending = current?.pendingOperation;
+  if (!current || !pending || (expectedLeaseToken && pending.leaseToken !== expectedLeaseToken)) return { statusCode: 409, body: { code: 'IN_PROGRESS' } };
+  if (!expectedLeaseToken && Date.parse(pending.leaseExpiresAt) > now.getTime()) return { statusCode: 409, body: { code: 'IN_PROGRESS' } };
+  if (current.notifications.some((notice) => notice.status === 'dispatching') && (pending.route.endsWith('/pause') || pending.route.endsWith('/cancel'))) {
+    return { statusCode: 409, body: { code: 'IN_PROGRESS' } };
+  }
+  let transitioned: TimerSession;
+  try { transitioned = applyControlTransition(current, pending.route, now); }
+  catch (error) {
+    if (error instanceof ControlTransitionError) throw new HttpError(409, error.code);
+    throw error;
+  }
+  const body = serializeSession(transitioned, now);
+  const previousGeneration = current.generation;
+  const receipt = { idempotencyKey: pending.idempotencyKey, route: pending.route, requestFingerprint: pending.requestFingerprint,
+    responseStatus: 200, responseBody: body, expiresAt: new Date(now.getTime() + 7 * 86_400_000).toISOString() };
+  if (!(await repository.completeOperation(sessionId, pending.expectedVersion, pending.leaseToken, transitioned, receipt))) return { statusCode: 409, body: { code: 'IN_PROGRESS' } };
+  operationEvent({ event: 'timer-control-committed', operation: transitioned.state === 'paused' ? 'pause' : transitioned.state === 'cancelled' ? 'cancel' : 'resume', result: 'accepted', sessionId, operationKey: pending.idempotencyKey, version: transitioned.version, generation: transitioned.generation, requestId, timestamp: now });
+  if (transitioned.state === 'running' && transitioned.generation > previousGeneration) {
+    const registrations = [
+      registrar.register(transitioned, { targetId: transitioned.id, generation: transitioned.generation, purpose: 'deadline', scheduledAt: transitioned.deadline! }),
+      ...transitioned.notifications.filter((notice) => notice.status === 'pending' && notice.scheduledAt).map((notice) => registrar.register(transitioned, { targetId: notice.id, generation: transitioned.generation, purpose: 'notification', notificationId: notice.id, scheduledAt: notice.scheduledAt! })),
+    ];
+    await Promise.allSettled(registrations);
+  }
+  return { statusCode: 200, body };
 }
 
 export function serializeSession(session: TimerSession, now: Date, remaining = session.remainingSeconds) {

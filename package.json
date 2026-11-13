@@ -10,6 +10,7 @@
     "format:check": "prettier --check apps packages infra tests",
     "test": "vitest",
     "test:u1": "vitest run tests/unit/u1 tests/integration/u1",
+    "test:u2": "vitest run tests/unit/u2 tests/integration/u2",
     "test:coverage": "vitest run --coverage",
     "cdk:test": "vitest run tests/unit/u1/infra"
   },

@@ -1,6 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
+
+const rootPath = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
+  resolve: { alias: [
+    { find: /^react$/, replacement: rootPath('./node_modules/react/index.js') },
+    { find: /^react\/jsx-runtime$/, replacement: rootPath('./node_modules/react/jsx-runtime.js') },
+    { find: /^react\/jsx-dev-runtime$/, replacement: rootPath('./node_modules/react/jsx-dev-runtime.js') },
+    { find: /^react-dom$/, replacement: rootPath('./node_modules/react-dom/index.js') },
+    { find: /^react-dom\/client$/, replacement: rootPath('./node_modules/react-dom/client.js') },
+  ] },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],

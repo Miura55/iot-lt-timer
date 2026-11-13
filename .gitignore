@@ -1,4 +1,9 @@
 # BEGIN AI-DLC:gitignore
+# Dependencies installed by npm at the workspace root or in individual workspaces.
+node_modules/
+**/node_modules/
+# CDK synthesis output and locally generated build output.
+**/cdk.out/
 # AI-DLC: local working files
 aidlc/active-space
 aidlc/spaces/*/intents/active-intent

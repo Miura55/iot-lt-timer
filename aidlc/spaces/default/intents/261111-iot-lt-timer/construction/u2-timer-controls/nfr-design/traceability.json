@@ -1,0 +1,152 @@
+{
+  "stage": "nfr-design",
+  "unit": "u2-timer-controls",
+  "upstream_ids": [
+    "NFR2.1",
+    "NFR2.2",
+    "NFR2.3",
+    "NFR4.1",
+    "NFR4.2",
+    "NFR3.1",
+    "NFR3.2",
+    "NFR3.3",
+    "NFR3.4",
+    "NFR2.4",
+    "NFR2.5",
+    "NFR2.6",
+    "NFR2.7",
+    "NFR2.8",
+    "NFR2.9",
+    "NFR2.10",
+    "NFR2.11",
+    "NFR5.1",
+    "NFR5.2",
+    "NFR5.3",
+    "NFR5.4",
+    "NFR6.1",
+    "NFR6.2",
+    "NFR6.3"
+  ],
+  "coverage": [
+    {
+      "id": "NFR2.1",
+      "status": "OK",
+      "target": "performance-design.md: latency budgets and server-side state reads"
+    },
+    {
+      "id": "NFR2.2",
+      "status": "OK",
+      "target": "performance-design.md: API budgets and asynchronous wake handling"
+    },
+    {
+      "id": "NFR2.3",
+      "status": "OK",
+      "target": "performance-design.md: API budgets and bounded work"
+    },
+    {
+      "id": "NFR4.1",
+      "status": "OK",
+      "target": "performance-design.md: shared service capacity and request path"
+    },
+    {
+      "id": "NFR4.2",
+      "status": "OK",
+      "target": "performance-design.md: bounded request path"
+    },
+    {
+      "id": "NFR3.1",
+      "status": "OK",
+      "target": "security-design.md: authenticated principal and venue authorization"
+    },
+    {
+      "id": "NFR3.2",
+      "status": "OK",
+      "target": "security-design.md: authorization on state reads and operations"
+    },
+    {
+      "id": "NFR3.3",
+      "status": "OK",
+      "target": "security-design.md: no public registration and least privilege"
+    },
+    {
+      "id": "NFR3.4",
+      "status": "OK",
+      "target": "security-design.md: TLS, managed encryption, and secret handling"
+    },
+    {
+      "id": "NFR2.4",
+      "status": "OK",
+      "target": "scalability-design.md: shared repository and bounded session workload"
+    },
+    {
+      "id": "NFR2.5",
+      "status": "OK",
+      "target": "scalability-design.md: initial single-venue capacity boundary"
+    },
+    {
+      "id": "NFR2.6",
+      "status": "OK",
+      "target": "reliability-design.md: lease recovery and idempotent operation receipts"
+    },
+    {
+      "id": "NFR2.7",
+      "status": "OK",
+      "target": "reliability-design.md: deterministic wake registration and reconciliation"
+    },
+    {
+      "id": "NFR2.8",
+      "status": "OK",
+      "target": "reliability-design.md: stale generation no-op and conditional state transitions"
+    },
+    {
+      "id": "NFR2.9",
+      "status": "OK",
+      "target": "reliability-design.md: stable command identity and bounded publish recovery"
+    },
+    {
+      "id": "NFR2.10",
+      "status": "OK",
+      "target": "reliability-design.md: pause/cancel races and unknown outcomes"
+    },
+    {
+      "id": "NFR2.11",
+      "status": "OK",
+      "target": "reliability-design.md: explicit non-guarantees and 60-second reconciler"
+    },
+    {
+      "id": "NFR5.1",
+      "status": "OK",
+      "target": "observability-design.md: operation/session correlation and retention"
+    }
+    ,{
+      "id": "NFR5.2",
+      "status": "OK",
+      "target": "observability-design.md: structured state-change event schema"
+    },
+    {
+      "id": "NFR5.3",
+      "status": "OK",
+      "target": "observability-design.md: recovery counters and distinct failure signals"
+    },
+    {
+      "id": "NFR5.4",
+      "status": "OK",
+      "target": "observability-design.md: request/session trace correlation and 7-day retention"
+    },
+    {
+      "id": "NFR6.1",
+      "status": "OK",
+      "target": "logical-components.md: test boundaries for API, repository, wake registrar, and dispatcher"
+    },
+    {
+      "id": "NFR6.2",
+      "status": "OK",
+      "target": "logical-components.md: repository-wide 80% line coverage quality gate"
+    },
+    {
+      "id": "NFR6.3",
+      "status": "OK",
+      "target": "logical-components.md: CI test, format, and typecheck integration gate"
+    }
+  ]
+}

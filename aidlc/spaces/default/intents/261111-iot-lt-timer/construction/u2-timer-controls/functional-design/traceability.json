@@ -1,0 +1,36 @@
+{
+  "stage": "functional-design",
+  "unit": "u2-timer-controls",
+  "upstream_ids": [
+    "AC1.3.1", "AC1.3.2", "AC1.3.3", "AC1.3.4",
+    "AC1.4.1", "AC1.4.2", "AC1.4.3",
+    "AC1.5.1", "AC1.5.2", "AC1.5.3",
+    "AC1.6.1", "AC1.6.2", "AC1.6.3",
+    "AC1.7.1", "AC1.7.2", "AC1.7.3", "AC1.7.4",
+    "AC1.8.1", "AC1.8.2", "AC1.8.3", "AC1.8.4", "AC1.8.5"
+  ],
+  "coverage": [
+    { "id": "AC1.3.1", "status": "N/A", "target": "U1 owns accepted start, initial state, and server-time deadline; U2 preserves that contract." },
+    { "id": "AC1.3.2", "status": "OK", "target": "BR2.5, BR2.9" },
+    { "id": "AC1.3.3", "status": "OK", "target": "BR2.2, BR2.3" },
+    { "id": "AC1.3.4", "status": "OK", "target": "BR2.2, BR2.8, BR2.9" },
+    { "id": "AC1.4.1", "status": "OK", "target": "BR2.1, BR2.4" },
+    { "id": "AC1.4.2", "status": "OK", "target": "BR2.8" },
+    { "id": "AC1.4.3", "status": "OK", "target": "BR2.2, BR2.7" },
+    { "id": "AC1.5.1", "status": "OK", "target": "BR2.1, BR2.5" },
+    { "id": "AC1.5.2", "status": "OK", "target": "BR2.5" },
+    { "id": "AC1.5.3", "status": "OK", "target": "BR2.2, BR2.5" },
+    { "id": "AC1.6.1", "status": "OK", "target": "BR2.1, BR2.6" },
+    { "id": "AC1.6.2", "status": "OK", "target": "BR2.2, BR2.7" },
+    { "id": "AC1.6.3", "status": "OK", "target": "BR2.3, BR2.8" },
+    { "id": "AC1.7.1", "status": "N/A", "target": "U1 owns AWS IoT publish and command construction; U2 does not change C3." },
+    { "id": "AC1.7.2", "status": "OK", "target": "BR2.9" },
+    { "id": "AC1.7.3", "status": "N/A", "target": "U1 owns the five-second notification expiry; U2 only invalidates pending work on state changes." },
+    { "id": "AC1.7.4", "status": "N/A", "target": "U1 owns notification audit retention; U2 operation receipts use the same seven-day limit." },
+    { "id": "AC1.8.1", "status": "OK", "target": "BR2.10" },
+    { "id": "AC1.8.2", "status": "Deferred", "target": "U3 connection validation after Pico hardware is available; no physical test is claimed here." },
+    { "id": "AC1.8.3", "status": "Deferred", "target": "U3 connection validation after Pico hardware is available; no physical test is claimed here." },
+    { "id": "AC1.8.4", "status": "OK", "target": "BR2.10" },
+    { "id": "AC1.8.5", "status": "Deferred", "target": "Build and Test validates the full test suite, CI, and 80% line-coverage floor." }
+  ]
+}
