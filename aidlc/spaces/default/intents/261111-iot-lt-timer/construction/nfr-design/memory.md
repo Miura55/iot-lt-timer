@@ -5,6 +5,7 @@
 <!-- example: 2026-05-29T10:14:32Z — chose REST over GraphQL; the consuming team only needs CRUD, revisit if subscriptions land -->
 - 2026-11-12T15:00:41Z [unit u1-integrated-timer] — 利用者決定に合わせ、期限回復の起点をnotification.expiresAtとした。通知0件はdeadline+65秒、通知ありはmax(deadline, latest expiresAt+65秒)を運用目標とする。
 - 2026-11-12T15:44:41Z [unit u1-integrated-timer] — 機能仕様へ期限起床の通常経路とdeadline+70秒の終了通知回復上限を反映し、NFR設計の保留文を同期した。全24詳細NFR IDを論理部品の追跡表へ明記。
+- 2026-11-13T01:16:13Z [unit u2-timer-controls] — architecture reviewはNOT-READY。共有OperationReceiptとU2 entityのshape、セキュリティ要件の追跡先、320px/キーボード/読み上げのUI設計対応に指摘があり、コード生成でU1正本に合わせたreceipt・実装trace・画面試験を明示する。
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->
@@ -13,8 +14,10 @@
 <!-- example: 2026-05-29T10:14:32Z — picked TDD over BDD this run; the team is unit-first and the domain is well-understood -->
 - 2026-11-12T15:00:41Z [unit u1-integrated-timer] — 各sessionのdeadline Waitに加えて60秒周期の独立照合を置く。追加の定期処理コストと引き換えに、ブラウザーを閉じた場合や起床欠落から期限状態を回復できる。
 - 2026-11-12T15:44:41Z [unit u1-integrated-timer] — 予定登録の重複コストを抑えるため対象ID・generation・attemptから決定的キーを作り、同じ試行の再送は同じ入力を使う。起床の重複副作用は保存状態と条件付きclaimで防ぐ。
+- 2026-11-13T01:16:13Z [unit u2-timer-controls] — operation回復は新しいreceipt正本を作らず、U1 shapeのreceiptとsession上のpending metadataを使う。コード生成は既存repositoryへ合わせ、競合するU2専用entityを追加しない。
 
 ## Open questions
 <!-- example: 2026-05-29T10:14:32Z — confirm the retention window with compliance before the next stage hardens the schema -->
 - 2026-11-12T15:00:41Z [unit u1-integrated-timer] — Functional Designの「deadlineを越えて最大65秒」表現は通知終端のexpiresAt+65秒と整合しない。コード生成へ進む前に、正本を「通知なしdeadline+65秒、終了通知ありdeadline+70秒を含むmax(deadline, latest expiresAt+65秒)」へ揃える。
 - 2026-11-12T15:44:41Z [unit u1-integrated-timer] — 解消: Functional Designの正本・NFR要件・NFR設計の期限式を一致させ、0通知のdeadline起床、C1のpending投影、再登録の冪等条件を追記した。
+- 2026-11-13T01:16:13Z [unit u2-timer-controls] — NFR2.6の共有receipt shapeをレビュー担当が実装可能と判断できる単体条件がまだ必要。コード生成では型・DynamoDB serialization・同じkey再生テストを対応付ける。

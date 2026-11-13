@@ -1,0 +1,11 @@
+# Generated build and deployment output
+**/dist/
+**/cdk.out/
+coverage/
+
+# Local AI-DLC runtime artifacts generated under infrastructure workspaces
+infra/aidlc/
+
+# Installed dependencies
+node_modules/
+**/node_modules/

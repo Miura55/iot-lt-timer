@@ -6,6 +6,7 @@
 - 2026-11-11T16:56:48Z [unit u1-integrated-timer] — タイマー表示が0になった時点で終了通知がpendingなら、結果確定までセッションをrunningで残す。これにより共有契約のrunning再検査とremainingAtRing=0の通知を両立する。
 - 2026-11-12T14:47:45Z [unit u1-integrated-timer] — 利用者の決定により、通知回復はexpiresAtから65秒以内を目標とする。内部dispatchingは公開APIのpendingに写像し、画面で「送信処理中」と示す。
 - 2026-11-12T15:36:17Z [unit u1-integrated-timer] — 時間起点を通知0件はdeadline、通知ありはmax(deadline, latest expiresAt+65秒)に統一し、終了時通知はdeadline+70秒となる。通常完了をsession deadline起床で駆動する。
+- 2026-11-12T18:42:01Z [unit u2-timer-controls] — C1/C2が期待版、冪等キー、保存後応答、送信権限取得後の停止待機を定めているため、U2では新しい利用者判断を追加せず状態遷移と競合順序を定義した。
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->
@@ -15,6 +16,7 @@
 - 2026-11-11T16:56:48Z [unit u1-integrated-timer] — MQTT結果不明時は依頼者の選択に従い同じcommandIdを有効期限内でのみ再試行する。Picoの重複排除を利用し、期限後の不確かな再送を防ぐ。
 - 2026-11-12T14:47:45Z [unit u1-integrated-timer] — 曖昧な試行の後でも、いずれかの同一commandId試行でAWS受付が確認できればsentとする。受付不明と実機鳴動の不確実性は別に保つ。
 - 2026-11-12T15:36:17Z [unit u1-integrated-timer] — 起床登録は対象・generation・attemptから決まるkey/inputを使う。同じ試行を再送し、terminal failure確認後のみ条件付きでattemptを増やす。重複起床は永続状態の再読込とclaimで抑える。
+- 2026-11-12T18:42:01Z [unit u2-timer-controls] — 状態変更と外部送信の完全な原子性を仮定せず、永続化されたclaimとsession versionの条件付き競合で順序を決める。claim済み送信を止める操作は受付結果または期限切れの確定まで成功を保留し、再開時はgenerationを変えて旧wakeを無効化する。
 
 ## Open questions
 <!-- example: 2026-05-29T10:14:32Z — confirm the retention window with compliance before the next stage hardens the schema -->
