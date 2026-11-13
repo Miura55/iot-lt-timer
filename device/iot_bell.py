@@ -108,9 +108,11 @@ def play_command(message):
         print("Expired command ignored")
         return
 
+    print("Command accepted:", command_id, "rings:", ring_count)
     remember_command(command_id)
     try:
         for index in range(ring_count):
+            print("Ring", index + 1, "of", ring_count)
             # Transistor ON pulls the bell's T terminal LOW.
             relay.value(1)
             time.sleep_ms(RELAY_PULSE_MS)
@@ -125,6 +127,7 @@ def play_command(message):
 # MQTTメッセージをsubscribe
 def subscribe_message(client):
     def on_message(topic, message):
+        print("MQTT message received on", topic)
         try:
             play_command(message)
         except Exception as error:
