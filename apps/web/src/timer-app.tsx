@@ -24,6 +24,7 @@ export function App() {
   const [password, setPassword] = useState('');
   const [newPasswordRequired, setNewPasswordRequired] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [duration, setDuration] = useState('600');
   const [bells, setBells] = useState<Bell[]>([]);
   const [state, setState] = useState<StateResponse | null>(null);
@@ -34,6 +35,24 @@ export function App() {
   const pendingControlAttempt = useRef<ControlAttemptStore['current']>(null);
 
   const token = useCallback(async () => (await fetchAuthSession()).tokens?.idToken?.toString(), []);
+
+  useEffect(() => {
+    let active = true;
+    void fetchAuthSession()
+      .then((session) => {
+        if (active && session.tokens?.idToken) setAuthenticated(true);
+      })
+      .catch(() => {
+        // No saved session is a normal state; show the login form instead.
+      })
+      .finally(() => {
+        if (active) setAuthReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const loadState = useCallback(async () => {
     if (document.visibilityState === 'hidden') return;
     const sequence = ++requestSequence.current;
@@ -82,6 +101,17 @@ export function App() {
         setNewPasswordRequired(true);
       else setAuthenticated(true);
     } catch (cause) {
+      if (cause instanceof Error && cause.name === 'UserAlreadyAuthenticatedException') {
+        try {
+          const session = await fetchAuthSession();
+          if (session.tokens?.idToken) {
+            setAuthenticated(true);
+            return;
+          }
+        } catch {
+          // Fall through to the normal login error if the saved session is unusable.
+        }
+      }
       // Keep credentials and Cognito challenge parameters out of logs; the
       // error name and message are enough to diagnose a failed SRP exchange.
       console.error('Cognito sign-in failed', {
@@ -168,6 +198,16 @@ export function App() {
       setLoading(false);
     }
   }
+
+  if (!authReady)
+    return (
+      <main className="shell">
+        <section className="card login">
+          <h1>LTベルタイマー</h1>
+          <p className="muted">ログイン状態を確認しています…</p>
+        </section>
+      </main>
+    );
 
   if (!authenticated)
     return (
