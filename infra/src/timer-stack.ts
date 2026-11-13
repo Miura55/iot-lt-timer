@@ -228,6 +228,17 @@ export class TimerStack extends Stack {
         props.environmentName === 'prod' ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: props.environmentName !== 'prod',
     });
+    const spaRewrite = new cloudfront.Function(this, 'SpaRewrite', {
+      code: cloudfront.FunctionCode.fromInline(`function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);
+  if (uri === '/' || lastSegment.indexOf('.') === -1) {
+    request.uri = '/index.html';
+  }
+  return request;
+}`),
+    });
     const distribution = new cloudfront.Distribution(this, 'WebDistribution', {
       defaultRootObject: 'index.html',
       defaultBehavior: {
@@ -235,6 +246,12 @@ export class TimerStack extends Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+        functionAssociations: [
+          {
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            function: spaRewrite,
+          },
+        ],
       },
       additionalBehaviors: {
         'v1/*': {
@@ -247,20 +264,6 @@ export class TimerStack extends Stack {
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
         },
       },
-      errorResponses: [
-        {
-          httpStatus: 403,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-          ttl: Duration.seconds(0),
-        },
-        {
-          httpStatus: 404,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-          ttl: Duration.seconds(0),
-        },
-      ],
     });
     new s3deploy.BucketDeployment(this, 'DeployWeb', {
       destinationBucket: bucket,

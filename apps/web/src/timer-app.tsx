@@ -62,16 +62,24 @@ export function App() {
         headers: { authorization: `Bearer ${jwt}` },
         cache: 'no-store',
       });
+      if (response.status === 403)
+        throw new Error('状態を取得する権限がありません。会場のread権限を確認してください。');
       if (!response.ok)
         throw new Error('状態を取得できませんでした。ネットワークとログインを確認してください。');
+      if (!response.headers.get('content-type')?.includes('application/json'))
+        throw new Error('状態APIからJSON以外の応答が返りました。CloudFrontとAPIの設定を確認してください。');
       const result = (await response.json()) as StateResponse;
       if (sequence !== requestSequence.current) return;
       setState(result);
       setLastUpdated(new Date());
       setError('');
-    } catch {
+    } catch (cause) {
       if (sequence === requestSequence.current)
-        setError('状態を更新できません。最後に取得した情報を表示しています。');
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : '状態を更新できません。最後に取得した情報を表示しています。',
+        );
     }
   }, [token]);
 
