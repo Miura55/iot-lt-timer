@@ -81,7 +81,13 @@ export function App() {
       if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED')
         setNewPasswordRequired(true);
       else setAuthenticated(true);
-    } catch {
+    } catch (cause) {
+      // Keep credentials and Cognito challenge parameters out of logs; the
+      // error name and message are enough to diagnose a failed SRP exchange.
+      console.error('Cognito sign-in failed', {
+        name: cause instanceof Error ? cause.name : 'UnknownError',
+        message: cause instanceof Error ? cause.message : 'Unknown sign-in error',
+      });
       setError('ログインできません。メールアドレスとパスワードを確認してください。');
     } finally {
       setLoading(false);
