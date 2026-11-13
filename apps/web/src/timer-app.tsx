@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { confirmSignIn, fetchAuthSession, signIn, signOut } from '@aws-amplify/auth';
+import { confirmSignIn, fetchAuthSession, signIn, signOut } from 'aws-amplify/auth';
 import {
   submitControlRequest,
   type ControlAction,

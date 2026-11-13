@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Amplify } from '@aws-amplify/core';
+import { Amplify } from 'aws-amplify';
 import './style.css';
 import { App } from './timer-app.js';
 
