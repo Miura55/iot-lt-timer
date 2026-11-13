@@ -2,7 +2,7 @@
 
 入力: [U2性能設計](../nfr-design/performance-design.md)、[U2セキュリティ設計](../nfr-design/security-design.md)、[U2スケーラビリティ設計](../nfr-design/scalability-design.md)、[U2信頼性設計](../nfr-design/reliability-design.md)、[U2観測性設計](../nfr-design/observability-design.md)、[U2論理コンポーネント](../nfr-design/logical-components.md)、[ドメイン構成](../../../inception/domain-design/components.md)、[U2機能仕様](../functional-design/functional-spec.md)、[連携仕様](../../../inception/contract-design/contract-summary.md)、[U1インフラ構成](../../u1-integrated-timer/infrastructure-design/infrastructure-specification.md)。
 
-U2はU1の東京リージョン・1会場・同時1セッション構成を共有する。新しいDB、VPC、常時稼働ホスト、MQTT topicは追加しない。現行の月額500円は目安で、実利用・ログ・CloudWatch監視・無料利用枠の適用条件で変動する。予算通知は行うが自動停止しない。
+U2はU1の東京リージョン・1会場・同時1セッション構成を共有する。新しいDB、VPC、常時稼働ホスト、MQTT topicは追加しない。月額500円は目安で、実利用・ログ・CloudWatch監視・無料利用枠の適用条件で変動する。AWS Budgetsによる予算通知や自動停止は行わない。
 
 ## Deployment
 
@@ -19,7 +19,7 @@ U2はU1の東京リージョン・1会場・同時1セッション構成を共�
 | Wait and recovery | U1 Step Functions Standard state machineでresume後のdeadlineとpending通知wakeを登録。U1 EventBridge Schedulerの毎分reconcilerを拡張し、欠落wakeと期限切れ`pendingOperation`を候補限定で回復する。 | deadlineはサーバー保存値を正とし、イベント/ブラウザーの時計から独立させる。 |
 | Bell transport | U1 Dispatcher Lambda、AWS IoT Core、環境固定のC3 `commands` topic、QoS 1、retain=falseを共有。dispatcher roleは必要topicへのpublishだけを許可する。 | pause/cancelは既にpublish済みの命令を撤回できない。AWS受付と物理鳴動を同一視しない。 |
 | Secrets and encryption | U1 TLS、DynamoDB/S3/CloudWatch暗号化、Cognito秘密情報管理、GitHub Actions OIDCを継承する。IoT秘密鍵はPico内のみ。 | U2が新たな共有鍵を扱わず、既存の最小権限境界を保つ。 |
-| Cost controls | U1 AWS Budgetsの500円相当通知を共有し、receipt TTL 7日・Logs 7日を維持。CloudWatch custom metrics/alarmsとCI実行量の実額を確認する。 | U2で専用常時稼働資源は増えないが、監視メトリクスとLambda処理量により実費は増える。金額・無料枠適用を保証しない。 |
+| Cost controls | AWS Budgetsアラームは作成せず、receipt TTL 7日・Logs 7日を維持する。CloudWatch custom metrics/alarmsとCI実行量の実額を確認する。 | U2で専用常時稼働資源は増えないが、監視メトリクスとLambda処理量により実費は増える。金額・無料枠適用を保証しない。 |
 
 ## Infrastructure Services
 

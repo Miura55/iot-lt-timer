@@ -4,6 +4,7 @@ node_modules/
 **/node_modules/
 # CDK synthesis output and locally generated build output.
 **/cdk.out/
+**/dist/
 # AI-DLC: local working files
 aidlc/active-space
 aidlc/spaces/*/intents/active-intent

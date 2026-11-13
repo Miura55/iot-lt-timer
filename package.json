@@ -1,6 +1,9 @@
 {
   "name": "iot-lt-timer",
   "private": true,
+  "engines": {
+    "node": "22.23.5"
+  },
   "workspaces": [
     "apps/*",
     "packages/*",

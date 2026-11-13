@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "synth": "cdk synth"
+    "build:app": "npm --prefix .. run build",
+    "synth": "npm run build:app && cdk synth",
+    "diff": "npm run build:app && cdk diff",
+    "deploy": "npm run build:app && cdk deploy"
   },
   "dependencies": {
     "@lt-timer/domain": "1.0.0"

@@ -22,15 +22,17 @@
             └─ AWS IoT Core MQTT ─ Raspberry Pi Pico (ベル端末)
 ```
 
-AWSリソースはAWS CDKで定義しています。`dev` と `prod` の環境をサポートし、料金予算アラームもスタックに含まれます。
+AWSリソースはAWS CDKで定義しています。`dev` と `prod` の環境をサポートします。月額500円は費用設計の目安で、AWS Budgetsによる予算アラームは作成しません。
 
 ## 開発環境
 
-- Node.js 22
+- Node.js 22.23.5
 - npm
 - AWS CDKを使った合成・デプロイにはAWS CLI認証情報が必要
 
 ```sh
+nvm install 22.23.5
+nvm use 22.23.5
 npm ci
 npm run dev
 ```
@@ -56,9 +58,37 @@ cd infra
 npm run synth -- -c environment=dev
 ```
 
+`synth` は先にリポジトリ全体をビルドするため、生成物を手動で更新する必要はありません。
+
 ## AWS環境
 
-CDKスタックは `infra/` にあります。CIではPull Requestごとにフォーマット、lint、型チェック、テスト、カバレッジ、ビルド、CDK合成を実行します。`main` へのpushで開発環境、`workflow_dispatch` で本番環境のデプロイを行う設定です。デプロイにはGitHub ActionsのOIDCロール設定が必要です。
+CDKスタックは `infra/` にあります。AWSアカウントと東京リージョン（`ap-northeast-1`）を対象にデプロイします。初回はAWS CLIの認証情報を設定し、CDK Bootstrapを実行してください。
+
+```sh
+# AWS CLIでログイン済みであることを確認
+npm ci                    # リポジトリのルートで初回、または依存関係の更新後に実行
+aws sts get-caller-identity --profile <AWS_PROFILE> --query Account --output text
+
+cd infra
+
+# 初回のみ、対象アカウント・リージョンごとに実行
+npx cdk bootstrap aws://<AWS_ACCOUNT_ID>/ap-northeast-1 --region ap-northeast-1 --profile <AWS_PROFILE>
+```
+
+`diff` と `deploy` は先にリポジトリ全体をビルドします。以下は `infra/` で実行してください。
+
+```sh
+npm run diff -- IotLtTimerDev -c environment=dev --region ap-northeast-1 --profile <AWS_PROFILE>
+npm run deploy -- IotLtTimerDev -c environment=dev --region ap-northeast-1 --profile <AWS_PROFILE>
+```
+
+本番環境へデプロイする場合は、コマンドのスタック名と環境コンテキストを `IotLtTimerProd` / `prod` に変更してください。prodスタックはDynamoDBテーブルやCognitoユーザープールを保持する設定です。デプロイ後のAPIエンドポイントなどの出力は、AWS CloudFormationコンソールまたは次のコマンドで確認できます。
+
+```sh
+aws cloudformation describe-stacks --stack-name IotLtTimerDev --query 'Stacks[0].Outputs'
+```
+
+CIではPull Requestごとにフォーマット、lint、型チェック、テスト、カバレッジ、ビルド、CDK合成を実行します。`main` へのpushで開発環境、`workflow_dispatch` で本番環境をデプロイします。GitHub Actionsからのデプロイには、リポジトリの `AWS_ROLE_ARN` シークレットに設定したAWS OIDCロールが必要です。本番デプロイではGitHub Actionsの `production` Environmentを使用します。
 
 ユーザープールのセルフサインアップは無効です。利用者はCognitoユーザープールに管理者が追加します。ブラウザー向け設定（API URL、Cognito User Pool IDなど）は `/v1/config` から取得されます。
 

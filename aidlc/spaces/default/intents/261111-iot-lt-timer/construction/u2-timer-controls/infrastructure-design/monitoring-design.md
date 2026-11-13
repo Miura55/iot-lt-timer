@@ -25,7 +25,6 @@ U1 CloudWatch Logs、metrics、dashboardを拡張する。初期のCloudWatch閾
 | Wake recovery failure | Step Functions登録がterminal failureで再登録後も失敗 | P2 | execution name、generation、attemptを使って調査 |
 | Reconciler failure | invocation error、処理上限反復、候補滞留 | P2 | CloudWatch logs/metricsを確認し、状態回復後に再処理 |
 | Unknown notification result | expiry後もunknownが確定または割合上昇 | P3 | 会場画面の「送信結果不明」を確認。実機鳴動の目視確認へ引き継ぐ |
-| Monthly spend | U1 AWS Budgetが80% / 100%を超過 | P2 | 予算通知先。自動停止はせず、利用量/ログ/無料枠を確認 |
 
 通知メール先は運用連絡先の確定後に購読する。未設定時に有効な通知があるかのように扱わない。
 

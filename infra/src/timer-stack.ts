@@ -15,7 +15,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import * as budgets from 'aws-cdk-lib/aws-budgets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
@@ -268,14 +267,6 @@ export class TimerStack extends Stack {
       distribution,
       distributionPaths: ['/*'],
       sources: [s3deploy.Source.asset(path.join(root, 'apps/web/dist'))],
-    });
-    new budgets.CfnBudget(this, 'MonthlyCostBudget', {
-      budget: {
-        budgetName: `iot-lt-timer-${props.environmentName}`,
-        budgetLimit: { amount: 500, unit: 'JPY' },
-        timeUnit: 'MONTHLY',
-        budgetType: 'COST',
-      },
     });
     this.exportValue(api.apiEndpoint, { name: `ApiEndpoint-${props.environmentName}` });
     this.exportValue(distribution.distributionDomainName, {
