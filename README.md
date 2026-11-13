@@ -92,6 +92,20 @@ CIではPull Requestごとにフォーマット、lint、型チェック、テ�
 
 ユーザープールのセルフサインアップは無効です。利用者はCognitoユーザープールに管理者が追加します。ブラウザー向け設定（API URL、Cognito User Pool IDなど）は `/v1/config` から取得されます。
 
+### 利用者の会場権限
+
+Cognitoにユーザーを追加しただけではタイマーを操作できません。初回ログインで仮パスワードから新しいパスワードを設定した後、DynamoDBのタイマー状態テーブルに会場権限を登録してください。`sub` はCognitoユーザー詳細に表示されるユーザーIDです。dev環境の会場IDは `venue-default` です。
+
+```json
+{
+  "PK": "USER#<Cognitoのsub>",
+  "SK": "VENUE#venue-default",
+  "permissions": ["read", "operate"]
+}
+```
+
+この項目をDynamoDBコンソールで作成します。`read` は状態の閲覧、`operate` はタイマー開始・一時停止・再開・キャンセルを許可します。タイマー状態テーブル名はCloudFormationスタック `IotLtTimerDev` の `TimerState` リソースから確認できます。
+
 ## ベル端末のMQTT契約
 
 Lambdaは次のトピックへQoS 1、retain無効で通知コマンドをpublishします。
