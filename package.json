@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @lt-timer/web",
     "build": "npm run build --workspace @lt-timer/domain && npm run build --workspace @lt-timer/api && npm run build --workspace @lt-timer/web && npm run build --workspace @lt-timer/infra",
-    "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p packages/domain/tsconfig.json && tsc --noEmit -p infra/tsconfig.json",
+    "typecheck": "npm run build --workspace @lt-timer/domain && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p packages/domain/tsconfig.json && tsc --noEmit -p infra/tsconfig.json",
     "lint": "eslint apps packages infra tests",
     "format:check": "prettier --check apps packages infra tests",
     "test": "vitest",
