@@ -48,8 +48,29 @@ describe('U2 CDK assertions', () => {
         'iot:Publish',
       ),
     );
-    expect(iot).toHaveLength(1);
-    expect(JSON.stringify(iot[0].Resource)).toContain('topic/lt-timer/v1/dev/bells/*/commands');
+    expect(iot).toHaveLength(2);
+    for (const statement of iot) {
+      expect(JSON.stringify(statement.Resource)).toContain('topic/lt-timer/v1/dev/bells/*/commands');
+    }
+  });
+  it('discovers the account IoT endpoint from the dispatcher role without a Lambda env parameter', () => {
+    const statements = Object.values(synthesized.findResources('AWS::IAM::Policy')).flatMap(
+      (policy) => policy.Properties?.PolicyDocument.Statement ?? [],
+    );
+    const describe = statements.filter((statement: { Action?: string | string[] }) =>
+      (Array.isArray(statement.Action) ? statement.Action : [statement.Action]).includes(
+        'iot:DescribeEndpoint',
+      ),
+    );
+    expect(describe).toHaveLength(2);
+    expect(describe.map((statement: { Resource: string }) => statement.Resource)).toEqual([
+      '*',
+      '*',
+    ]);
+    const lambdas = Object.values(synthesized.findResources('AWS::Lambda::Function'));
+    for (const fn of lambdas) {
+      expect(fn.Properties?.Environment?.Variables?.IOT_ENDPOINT).toBeUndefined();
+    }
   });
   it('adds the shared operations dashboard and server-side failure alarms', () => {
     synthesized.resourceCountIs('AWS::CloudWatch::Dashboard', 1);

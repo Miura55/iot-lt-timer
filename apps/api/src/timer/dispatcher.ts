@@ -21,10 +21,11 @@ export interface BellPublisher {
 }
 
 export class AwsIotBellPublisher implements BellPublisher {
-  constructor(private readonly client: IoTDataPlaneClient) {}
+  constructor(private readonly getClient: () => Promise<IoTDataPlaneClient>) {}
   async publish(topic: string, payload: string) {
     try {
-      await this.client.send(
+      const client = await this.getClient();
+      await client.send(
         new PublishCommand({
           topic,
           qos: 1,
@@ -36,6 +37,15 @@ export class AwsIotBellPublisher implements BellPublisher {
     } catch (error) {
       const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata
         ?.httpStatusCode;
+      console.error(
+        JSON.stringify({
+          event: 'timer-iot-publish-sdk-error',
+          topic,
+          errorName: (error as { name?: string }).name ?? 'UnknownError',
+          httpStatusCode: status,
+          requestId: (error as { $metadata?: { requestId?: string } }).$metadata?.requestId,
+        }),
+      );
       return status !== undefined && status < 500 ? ('rejected' as const) : ('ambiguous' as const);
     }
   }
@@ -48,6 +58,9 @@ export function createDispatcher(
 ) {
   return async (event: DispatchEvent) => {
     const now = (options.now ?? (() => new Date()))();
+    console.info(
+      JSON.stringify({ event: 'timer-dispatch-invoked', ...event, timestamp: now.toISOString() }),
+    );
     let session = await repository.getSession(event.sessionId);
     if (!session || session.state !== 'running' || session.generation !== event.generation)
       return { outcome: 'stale' };
@@ -140,6 +153,19 @@ export function createDispatcher(
     ) {
       const result = await publisher.publish(options.topic, JSON.stringify(command));
       attemptCount += 1;
+      console.info(
+        JSON.stringify({
+          event: 'timer-iot-publish-attempt',
+          sessionId: session.id,
+          notificationId: candidate.id,
+          commandId: command.commandId,
+          generation: event.generation,
+          topic: options.topic,
+          attempt: attemptCount,
+          outcome: result,
+          timestamp: (options.now ?? (() => new Date()))().toISOString(),
+        }),
+      );
       if (result === 'accepted') {
         cumulative = 'accepted';
         break;

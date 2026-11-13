@@ -4,7 +4,6 @@ import { loadConfig } from '../../../apps/api/src/config.js';
 const validEnvironment = {
   TABLE_NAME: 'timer-table',
   VENUE_ID: 'venue-1',
-  IOT_ENDPOINT: 'https://iot.example.com',
   BELL_ID: 'bell-1',
   USER_POOL_ID: 'pool-1',
   USER_POOL_CLIENT_ID: 'client-1',
@@ -16,7 +15,6 @@ describe('API configuration', () => {
       tableName: 'timer-table',
       venueId: 'venue-1',
       stateMachineArn: undefined,
-      iotEndpoint: 'https://iot.example.com',
       bellId: 'bell-1',
       environment: 'dev',
       userPoolId: 'pool-1',

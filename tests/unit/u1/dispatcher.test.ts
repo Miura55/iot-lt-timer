@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { PublishCommand } from '@aws-sdk/client-iot-data-plane';
+import { describe, expect, it, vi } from 'vitest';
 import type { Notification, TimerSession } from '../../../packages/domain/src/index.js';
 import { buildSession } from '../../../apps/api/src/timer/service.js';
-import { createDispatcher, createMockPublisher } from '../../../apps/api/src/timer/dispatcher.js';
+import {
+  AwsIotBellPublisher,
+  createDispatcher,
+  createMockPublisher,
+} from '../../../apps/api/src/timer/dispatcher.js';
 import type { TimerRepository } from '../../../apps/api/src/timer/repository.js';
 
 function setup(overrides: Partial<Notification> = {}) {
@@ -69,6 +74,48 @@ function setup(overrides: Partial<Notification> = {}) {
 }
 
 describe('U1 dispatcher recovery', () => {
+  it('publishes the exact command topic with QoS 1 and retain disabled', async () => {
+    const sent: PublishCommand[] = [];
+    const client = {
+      async send(command: PublishCommand) {
+        sent.push(command);
+        return {};
+      },
+    };
+    const publisher = new AwsIotBellPublisher(async () => client as never);
+    await expect(
+      publisher.publish('lt-timer/v1/dev/bells/bell-1/commands', '{"commandId":"n1"}'),
+    ).resolves.toBe('accepted');
+    expect(sent[0]?.input).toMatchObject({
+      topic: 'lt-timer/v1/dev/bells/bell-1/commands',
+      qos: 1,
+      retain: false,
+    });
+    expect(new TextDecoder().decode(sent[0]?.input.payload as Uint8Array)).toBe(
+      '{"commandId":"n1"}',
+    );
+  });
+
+  it('surfaces AWS publish errors without logging the payload', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const client = {
+      async send() {
+        throw Object.assign(new Error('denied'), {
+          name: 'ForbiddenException',
+          $metadata: { httpStatusCode: 403, requestId: 'req-1' },
+        });
+      },
+    };
+    const publisher = new AwsIotBellPublisher(async () => client as never);
+    await expect(
+      publisher.publish('lt-timer/v1/dev/bells/bell-1/commands', 'secret-payload'),
+    ).resolves.toBe('rejected');
+    expect(log).toHaveBeenCalledOnce();
+    expect(log.mock.calls[0]?.[0]).toContain('ForbiddenException');
+    expect(log.mock.calls[0]?.[0]).not.toContain('secret-payload');
+    log.mockRestore();
+  });
+
   it('reclaims an expired lease only when publishing never started, retaining command id', async () => {
     const state = setup({
       status: 'dispatching',

@@ -62,6 +62,17 @@ export class StepFunctionsWakeRegistrar {
           input: execution.input,
         }),
       );
+      console.info(
+        JSON.stringify({
+          event: 'timer-wake-execution-started',
+          sessionId: session.id,
+          targetId,
+          generation: input.generation,
+          purpose: input.purpose,
+          executionName: execution.executionName,
+          scheduledAt: input.scheduledAt,
+        }),
+      );
       await this.repository.setWakeState(
         session.id,
         input.notificationId,
@@ -76,6 +87,20 @@ export class StepFunctionsWakeRegistrar {
       );
     } catch (error) {
       const name = (error as { name?: string }).name ?? '';
+      console.error(
+        JSON.stringify({
+          event: 'timer-wake-execution-start-error',
+          sessionId: session.id,
+          targetId,
+          generation: input.generation,
+          purpose: input.purpose,
+          executionName: execution.executionName,
+          errorName: name || 'UnknownError',
+          httpStatusCode: (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+            ?.httpStatusCode,
+          requestId: (error as { $metadata?: { requestId?: string } }).$metadata?.requestId,
+        }),
+      );
       if (name === 'ExecutionAlreadyExists') {
         await this.resolveExisting(
           session,
@@ -157,6 +182,18 @@ export class StepFunctionsWakeRegistrar {
           stateMachineArn: this.stateMachineArn,
           name: execution.executionName,
           input: execution.input,
+        }),
+      );
+      console.info(
+        JSON.stringify({
+          event: 'timer-wake-execution-started',
+          sessionId: session.id,
+          targetId,
+          generation: input.generation,
+          purpose: input.purpose,
+          executionName: execution.executionName,
+          scheduledAt: input.scheduledAt,
+          source: 'reconcile',
         }),
       );
       await this.repository.setWakeState(

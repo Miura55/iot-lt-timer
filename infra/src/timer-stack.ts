@@ -103,14 +103,22 @@ export class TimerStack extends Stack {
     table.grantReadWriteData(apiFunction);
     table.grantReadWriteData(dispatchFunction);
     table.grantReadWriteData(reconcileFunction);
-    dispatchFunction.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['iot:Publish'],
-        resources: [
-          `arn:${this.partition}:iot:${this.region}:${this.account}:topic/lt-timer/v1/${props.environmentName}/bells/*/commands`,
-        ],
-      }),
-    );
+    for (const publisherFunction of [dispatchFunction, reconcileFunction]) {
+      publisherFunction.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['iot:Publish'],
+          resources: [
+            `arn:${this.partition}:iot:${this.region}:${this.account}:topic/lt-timer/v1/${props.environmentName}/bells/*/commands`,
+          ],
+        }),
+      );
+      publisherFunction.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['iot:DescribeEndpoint'],
+          resources: ['*'],
+        }),
+      );
+    }
     const stateMachine = new sfn.StateMachine(this, 'TimerWakeStateMachine', {
       stateMachineType: sfn.StateMachineType.STANDARD,
       definitionBody: sfn.DefinitionBody.fromChainable(
@@ -302,8 +310,6 @@ export class TimerStack extends Stack {
         TABLE_NAME: table.tableName,
         VENUE_ID: 'venue-default',
         ENVIRONMENT: environmentName,
-        IOT_ENDPOINT:
-          this.node.tryGetContext('iotEndpoint') ?? 'invalid.iot.ap-northeast-1.amazonaws.com',
         BELL_ID: this.node.tryGetContext('bellId') ?? 'bell-1',
         USER_POOL_ID: pool.userPoolId,
         USER_POOL_CLIENT_ID: client.userPoolClientId,
