@@ -2,6 +2,8 @@
 # Dependencies installed by npm at the workspace root or in individual workspaces.
 node_modules/
 **/node_modules/
+# Device-local network credentials; copy the example and fill it on the Pico.
+device/device_config.py
 # CDK synthesis output and locally generated build output.
 **/cdk.out/
 **/dist/

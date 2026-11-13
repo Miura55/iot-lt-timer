@@ -1,6 +1,6 @@
 # LT Timer
 
-スマートフォンのブラウザーから使う、AWSバックエンド管理のLTタイマーです。設定した残り時間にベルを鳴らし、終了時刻に向けて複数の通知を行えます。ベル端末はAWS IoT CoreへMQTT接続する想定で、ファームウェアはこのリポジトリには含まれません。
+スマートフォンのブラウザーから使う、AWSバックエンド管理のLTタイマーです。設定した残り時間にベルを鳴らし、終了時刻に向けて複数の通知を行えます。ベル端末はAWS IoT CoreへMQTT接続します。Raspberry Pi Pico向けサンプルは `device/iot_bell.py` にあります。
 
 ## 主な機能
 
@@ -106,6 +106,8 @@ Cognitoにユーザーを追加しただけではタイマーを操作できま�
 
 この項目をDynamoDBコンソールで作成します。`read` は状態の閲覧、`operate` はタイマー開始・一時停止・再開・キャンセルを許可します。タイマー状態テーブル名はCloudFormationスタック `IotLtTimerDev` の `TimerState` リソースから確認できます。
 
+ログイン後、Web画面が `GET /v1/state` を約2秒ごとに呼び出して状態を更新します。まだタイマーを開始していない場合は `session: null` が返り、待機状態になります。ベル端末の接続は状態取得には不要です。APIを直接確認する場合は、Web画面の認証済みIDトークンを `Authorization: Bearer <token>` に付けて呼び出してください。
+
 ## ベル端末のMQTT契約
 
 Lambdaは次のトピックへQoS 1、retain無効で通知コマンドをpublishします。
@@ -128,7 +130,15 @@ lt-timer/v1/{environment}/bells/{bellId}/commands
 }
 ```
 
-端末は有効期限を過ぎたコマンドを鳴らさず、`commandId` を使って重複配送による二重打音を防いでください。1回の打音間隔は500msです。実機ファームウェアの実装と動作確認は別途必要です。
+端末は有効期限を過ぎたコマンドを鳴らさず、`commandId` を使って同一起動中の重複配送による二重打音を防ぎます。打音の開始間隔は500msです。端末はNTPで時刻同期してからMQTTへ接続してください。
+
+### Picoの設定
+
+`device/device_config.example.py` を `device/device_config.py` にコピーし、Wi-Fi、AWS IoT Core endpoint、環境に合ったMQTT topicを設定してください。`device/device_config.py` はGitに登録されません。証明書と秘密鍵はPicoの `/certs/` に配置します。`RELAY_PULSE_MS` はベル入力に合わせて調整できます（初期値100ms）。端末コードは1〜3回の打音、期限切れ拒否、重複抑止を処理します。
+
+AWS IoT Coreでは、端末証明書に接続・購読・受信を許可するIoTポリシーを付与してください。許可対象は端末のMQTT client ID `picoW_*` と、設定したコマンドtopicに限定します。デバイス証明書のIoTポリシーはCDKでは自動作成しません。IoTの `iot:Subscribe` にはtopic filter ARN、`iot:Receive` にはtopic ARNを指定します。これらはAWS IoTの別個の認可アクションです。[AWS IoT Coreポリシーアクション](https://docs.aws.amazon.com/iot/latest/developerguide/iot-policy-actions.html)
+
+アプリの通知状態 `送信受付済み` はAWS IoTへのpublish受付を表し、端末の受信や実際の打音確認ではありません。実機での確認には、Picoのシリアル出力とベルを使った試験が必要です。
 
 ## リポジトリ構成
 
