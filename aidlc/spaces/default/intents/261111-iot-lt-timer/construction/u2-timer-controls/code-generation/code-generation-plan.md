@@ -28,7 +28,7 @@ NFR設計レビューの指摘を実装時に解消する: U1 OperationReceipt�
 - [x] Step 14: CDKへU2 API route、必要なLambda設定/IAM、既存DynamoDB access、Step Functions registration/reconciler、CloudWatch log/metrics/alarmsを更新する。U1共有table/state machine/scheduler/topicを重複作成せず、必要query/indexはソース実装と費用根拠を確認してから選ぶ。（US1.3–US1.8）
 - [x] Step 15: CDK assertionを追加してU2 route、resource-scoped IAM、期限回復設定、保持期間、monitoringと環境分離を確認する。U2-specific deployのためにAWS認証情報をPR CIへ渡さない。（US1.3–US1.8）
 - [x] Step 16: API/型/画面の利用手順とU2 test instructionsを更新し、全Story・詳細NFR・BRを実ファイルへtraceする。Source manifestに変更した全workspace application sourceを列挙する。（全担当Story）
-- [ ] Step 17: U1の既存作業ブランチ `feature/iot-lt-timer` をU1用のPR元として保ち、U2専用 `feature/u2-timer-controls` をU1ブランチから分岐してU2差分をコミットし、U2専用PRを作成する。U2 PRはU1 PRをbaseにしたstacked PRとして作り、U1のmain統合後にbaseをmainへ付け替える。（全担当Story）
+- [x] Step 17: U1の既存作業ブランチ `feature/iot-lt-timer` をU1用のPR元として保ち、U2専用 `feature/u2-timer-controls` をU1ブランチから分岐してU2差分をコミットし、U2専用PRを作成する。U2 PRはU1 PRをbaseにしたstacked PRとして作り、U1のmain統合後にbaseをmainへ付け替える。（全担当Story）
 
 ## Unit test scope
 

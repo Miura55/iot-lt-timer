@@ -1,1 +1,16 @@
-{"name":"@lt-timer/web","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build"},"dependencies":{"@aws-amplify/auth":"^6.10.0","@aws-amplify/core":"^6.9.0","react":"^18.3.1","react-dom":"^18.3.1"},"devDependencies":{}}
+{
+  "name": "@lt-timer/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@aws-amplify/auth": "^6.10.0",
+    "@aws-amplify/core": "^6.9.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {}
+}

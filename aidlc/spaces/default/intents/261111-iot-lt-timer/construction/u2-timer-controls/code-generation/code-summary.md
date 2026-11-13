@@ -5,6 +5,7 @@
 - Domain/API: `packages/domain/src/controls.ts`, `packages/domain/src/{index,types}.ts`、`apps/api/src/timer/{service,repository,dynamo-repository,wake-registrar,reconciler,dispatcher,http-handler,observability}.ts`。
 - UI: `apps/web/src/timer-app.tsx` と `apps/web/src/style.css` にpause/resume/cancelと状態結果を追加し、`apps/web/src/control-request.ts`で不確定操作のidempotency keyとbodyを再利用。
 - Infrastructure/CI: `infra/src/timer-stack.ts`、`.github/workflows/ci.yml`、root `package.json`、`vitest.config.ts`。
+- 開発・CI補助: `README.md`に開発、AWS構成、MQTTコマンド契約を記載。`.prettierignore`で生成物を除外し、ESLintにTypeScript parserを設定。CIの全体カバレッジ80%達成に向け、API設定・Webフロー・DynamoDB repositoryのテストを追加。
 - Tests: `tests/unit/u2/`の8ファイルと`tests/integration/u2/timer-controls.test.ts`を追加。
 - ルート`.gitignore`でroot/workspaceごとの`node_modules/`と`cdk.out/`を除外する。ビルド生成された`dist/`は作業ツリーに残るが、U2 source manifestとソース専用PRには含めない。
 
@@ -23,15 +24,15 @@
 
 ## Verification
 
-- `npm run test:u2`: 58 passed（U2再試行/IN_PROGRESSとreview findingの統合ケースを追加後に再確認）。
+- `npm run test:u2`: 72 passed（レビュー修正、API設定・Webフロー・repositoryカバレッジを含む）。
 - `npm run test:u1`: 31 passed。
-- `npm run typecheck`: passed after the final request-ID logging change.
-- `npm run build`: passed after the final request-ID logging and review-finding fixes; subsequent changes only expanded integration test cases.
-- U2 test set: domain 8, repository 7, service 6, HTTP 6, UI 6, control-request retry 5, observability 9, integration 6, CDK assertions 5.
+- `npm run format:check`, `npm run lint`, `npm run typecheck`: passed.
+- `npm run test:coverage`: 103 tests passed; line coverage 83.59% (80% floor met).
+- `npm run build`: passed after CI fixes.
+- U2 coverage: app 5, config 3, domain 8, repository 13, service 6, HTTP 6, UI controls 6, control-request retry 5, observability 9, integration 6, CDK assertions 5.
 
-## Tests not executed
+## Verification deferred
 
-- Full-suite line coverage was not measured after U2; Build and Test must verify the project's 80% application line-coverage floor.
 - AWS deployment/live Cognito, Step Functions, DynamoDB, and IoT Core verification was not performed because this stage does not deploy resources.
 - Pico physical bell tests AC1.8.2–AC1.8.4 remain deferred until the user-owned hardware is available; MQTT/service acceptance is not physical actuation evidence.
 
