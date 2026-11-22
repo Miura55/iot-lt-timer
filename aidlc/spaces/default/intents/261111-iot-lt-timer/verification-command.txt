@@ -1,0 +1,1 @@
+npm exec vitest -- run tests/unit/u1 tests/integration/u1

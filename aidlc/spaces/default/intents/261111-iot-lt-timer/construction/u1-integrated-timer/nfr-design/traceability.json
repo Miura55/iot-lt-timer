@@ -96,17 +96,17 @@
     {
       "id": "NFR2.4",
       "status": "OK",
-      "target": "reliability-design.md: 期限起動に加え60秒周期の独立照合を提案し、失われた起床から65秒以内の回復を運用SLO候補として明示。Functional Designの最大5秒記述は変更承認が必要。"
+      "target": "reliability-design.md: 毎sessionのdeadline起床、60秒周期照合、通知なしdeadline+65秒、通知ありmax(deadline, latest expiresAt+65秒)の回復目標とGET/開始時の論理完了評価。"
     },
     {
       "id": "NFR2.5",
       "status": "OK",
-      "target": "reliability-design.md: 同一commandId/payloadを期限内再試行し、いずれかの試行がAWS受付ならsent、期限時も曖昧ならunknownとする推奨状態優先順位。既存functional-spec/rulesへの反映が必要。"
+      "target": "reliability-design.md: 同一commandId/payloadを期限内再試行し、いずれか受付ならsent、受付なしで曖昧さが残れば期限でunknown、曖昧さなく全拒否の場合だけfailed、未試行ならexpired。"
     },
     {
       "id": "NFR2.6",
       "status": "OK",
-      "target": "reliability-design.md: 期限・送信結果・通信失敗を明示し、成功表示と区別する"
+      "target": "reliability-design.md and logical-components.md: 期限・送信結果・通信失敗を成功と区別し、内部dispatchingをAPI上pendingへ投影する。"
     },
     {
       "id": "NFR5.1",
@@ -136,17 +136,17 @@
     {
       "id": "NFR6.1",
       "status": "OK",
-      "target": "performance-design.md: test-afterの単体・主要境界結合試験を維持し、模擬IoT境界を使う"
+      "target": "performance-design.md: test-afterで各層unitとAPI/ストア・起床/Dispatcher・Dispatcher/模擬IoTの境界結合試験を実行し、AWS資格情報なしでも再現する。"
     },
     {
       "id": "NFR6.2",
       "status": "OK",
-      "target": "performance-design.md: 80%行カバレッジを品質ゲートとする"
+      "target": "performance-design.md: Web/API/domain/IoT adapterのアプリTS/JSに80%行カバレッジを適用し、生成物とIaCは除外範囲を明記する。"
     },
     {
       "id": "NFR6.3",
       "status": "OK",
-      "target": "logical-components.md: CIの配置先を後続実装計画で確定する。統合前テスト・整形・静的解析を必須とする"
+      "target": "performance-design.md and logical-components.md: GitHub Actionsがformat/lint、型検査、unit/結合、coverageを実行し、失敗または80%未満ならmain統合を拒否する。Infrastructure DesignでOIDCを構成する。"
     }
   ]
 }

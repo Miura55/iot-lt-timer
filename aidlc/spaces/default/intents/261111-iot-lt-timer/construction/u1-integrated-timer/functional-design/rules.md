@@ -83,8 +83,8 @@ rules:
     category: policy
     applies_to: ambiguous AWS IoT publish result
     trigger: transport timeout or connection loss after publish may have been accepted
-    logic: IF outcome is ambiguous and expiry remains THEN retry with bounded backoff using the same commandId and payload; IF expiry arrives without a definitive result THEN record unknown.
-    violation: Never mint a new commandId for a retry; never retry at or after expiry.
+    logic: IF outcome is ambiguous and expiry remains THEN retry with bounded backoff using the same commandId and payload; accumulate outcomes across attempts; IF any attempt is accepted THEN record sent; IF expiry arrives with any unresolved ambiguity and no accepted attempt THEN record unknown.
+    violation: Never mint a new commandId for a retry; never retry at or after expiry; never erase an earlier ambiguous result with a later rejection.
     source: [FR10, FR11, FR12, AC1.7.1, AC1.7.2, AC1.7.3]
 
   - id: BR1.10
@@ -92,7 +92,7 @@ rules:
     category: policy
     applies_to: notification outcome
     trigger: publish attempt settles or expires
-    logic: IF accepted THEN sent; IF definitively rejected without any prior ambiguous attempt THEN failed; IF any ambiguous result remains unresolved at expiry THEN unknown; IF never attempted and expiry passes THEN expired.
+    logic: IF any attempt was accepted THEN sent; ELSE IF any attempt was ambiguous THEN unknown at expiry; ELSE IF all attempted sends were definitively rejected THEN failed; ELSE IF never attempted and expiry passes THEN expired.
     violation: No status implies Pico receipt or physical ringing; status is shown as text, not inferred from connectivity.
     source: [FR10, FR12, NFR1, AC1.7.1, AC1.7.2, AC1.7.4]
 
@@ -101,8 +101,8 @@ rules:
     category: policy
     applies_to: zero-remaining notification
     trigger: deadline reached with BellPoint.remainingSeconds=0
-    logic: IF a zero-remaining notification is pending or dispatching THEN return remainingSeconds=0 and keep state running until sent, failed, unknown, cancelled, or expired; THEN mark session completed once all scheduled notifications are terminal.
-    violation: A due end bell is not suppressed merely because the display reached zero; the UI may label the zero state as end-notification processing.
+    logic: IF there are no notifications THEN mark session completed at deadline; ELSE keep state running until deadline has passed and all notifications are sent, failed, unknown, cancelled, or expired. At remainingSeconds=0, retain running until this completion condition holds.
+    violation: A due end bell is not suppressed merely because the display reached zero; a notification session may remain running after deadline while recovery is pending. The UI labels this state as end-notification processing.
     source: [FR3, FR5, FR6, FR10, NFR2, AC1.2.1, AC1.3.2, AC1.7.1]
 
   - id: BR1.12
@@ -110,8 +110,8 @@ rules:
     category: constraint
     applies_to: persistence and MQTT boundary
     trigger: state write, scheduler registration, or publish outcome
-    logic: Persist session and notifications atomically within the application store; schedule registration is repeatable from durable pending records; a publish occurs outside the store transaction after a conditional claim; reconcile outcomes by claim token and stable IDs.
-    violation: A partial scheduler failure does not falsely report that no session exists; it is retried from durable pending state and surfaced if unresolved.
+    logic: Persist session and notifications atomically within the application store, including session-deadline and notification-wake registration state. A wake registration retry uses the same deterministic key and input for the same target, generation, and attempt. Only a confirmed terminal registration failure permits a conditional increment of the attempt; an ambiguous response is reconciled against the deterministic execution name before an attempt advances. Wake handlers re-read durable state and claim conditionally, so duplicate executions cannot duplicate a side effect. A publish occurs outside the store transaction; a separate 60-second scan repairs missing registration, expired leases, and completion-pending sessions. Targets are deadline+65 seconds with no notifications and max(deadline, latest expiresAt+65 seconds) with notifications; a zero-remaining notification can make the latter deadline+70 seconds.
+    violation: A partial scheduler failure does not falsely report that no session exists. It remains durable, is retried idempotently from its recorded state, and is surfaced if unresolved; notification expiry is never extended.
     source: [FR4, FR5, FR10, FR14, NFR2, NFR3, AC1.3.1, AC1.3.4]
 
   - id: BR1.13

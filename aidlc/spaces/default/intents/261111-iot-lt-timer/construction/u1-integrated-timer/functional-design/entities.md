@@ -70,6 +70,17 @@ entities:
         min: 1
         default: 1
         constraints: 後続のresumeで増加し、古い起床を無効化する。
+      - name: deadlineWakeStatus
+        logical_type: Enum
+        required: true
+        allowed_values: [pending, registered, failed]
+        constraints: 現generationのdeadline起床の登録状態。起床後の完了処理と再照合は冪等。
+      - name: deadlineWakeAttempt
+        logical_type: Integer
+        required: true
+        min: 1
+        default: 1
+        constraints: 同じ登録試行は同じ決定的execution name/inputを使う。terminal failureが確認された後、条件付き更新でのみ増加する。
       - name: createdAt
         logical_type: UTC Instant
         required: true
@@ -141,6 +152,7 @@ entities:
         logical_type: Enum
         required: true
         allowed_values: [not_attempted, accepted, rejected, ambiguous]
+        constraints: 試行全体の累積結果。優先順位はaccepted（いずれか受付確認）> ambiguous（受付の可能性が残る）> rejected（全試行の不受理が確定）> not_attempted。
       - name: attemptCount
         logical_type: Integer
         required: true
@@ -154,6 +166,17 @@ entities:
         logical_type: Nullable<UTC Instant>
         required: true
         constraints: claim回復用の上限時刻。
+      - name: wakeStatus
+        logical_type: Enum
+        required: true
+        allowed_values: [pending, registered, failed]
+        constraints: 現generationのnotification起床の登録状態。起床側claimは重複実行に耐える。
+      - name: wakeAttempt
+        logical_type: Integer
+        required: true
+        min: 1
+        default: 1
+        constraints: 同じ登録試行は同じ決定的execution name/inputを使う。terminal failureが確認された後、条件付き更新でのみ増加する。
       - name: createdAt
         logical_type: UTC Instant
         required: true
@@ -165,7 +188,10 @@ entities:
       - 1 TimerSessionあたり0〜10件。
       - 通知の並び順はremainingAtRingの降順（イベント進行順はscheduledAtの昇順）。
       - pause/resumeでは同じnotificationIdを保持し、世代と時刻を更新する。terminal状態は再送しない。
-      - dispatchOutcome=ambiguousが一度でも確定した通知は、最終状態をunknownとし、受理を確認できたことにしない。
+      - 各generationの起床登録はnotificationId・generation・wakeAttemptから決まる登録キーで冪等化する。曖昧な登録結果は同一キーの状態を調べ、故障確定前にattemptを増やさない。
+      - いずれかの試行で受付が確認できたらdispatchOutcome=accepted・status=sentとする。受付確認が一度もなく曖昧な試行が残る場合、expiresAtでdispatchOutcome=ambiguous・status=unknownとする。曖昧な試行がなく全試行が不受理ならstatus=failed。
+      - 内部status=dispatchingはAPIでpendingへ写像する。画面は「送信処理中」と補足し、送信受付や物理鳴動と混同させない。
+      - 通知があるsessionはdeadline到達後かつ全通知が終端状態になってからcompletedとする。通知が0件ならdeadline起床でdeadline時にcompletedとする。独立照合は60秒ごとに行い、session完了回復は通知0件ならdeadline+65秒、通知ありならmax(deadline, 最新expiresAt+65秒)を目標とする。
     relationships:
       - target: TimerSession
         cardinality: many-to-one

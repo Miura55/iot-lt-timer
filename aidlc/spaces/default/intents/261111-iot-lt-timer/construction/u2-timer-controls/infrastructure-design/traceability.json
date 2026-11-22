@@ -1,0 +1,35 @@
+{
+  "stage": "infrastructure-design",
+  "unit": "u2-timer-controls",
+  "upstream_ids": [
+    "NFR2.1", "NFR2.2", "NFR2.3", "NFR2.4", "NFR2.5", "NFR2.6", "NFR2.7", "NFR2.8", "NFR2.9", "NFR2.10", "NFR2.11",
+    "NFR3.1", "NFR3.2", "NFR3.3", "NFR3.4", "NFR4.1", "NFR4.2",
+    "NFR5.1", "NFR5.2", "NFR5.3", "NFR5.4", "NFR6.1", "NFR6.2", "NFR6.3"
+  ],
+  "coverage": [
+    { "id": "NFR2.1", "status": "OK", "target": "DynamoDB conditional writes and transactional session/operation state" },
+    { "id": "NFR2.2", "status": "OK", "target": "Step Functions Standard deadline wake plus durable server-side deadline" },
+    { "id": "NFR2.3", "status": "OK", "target": "Lambda wake handlers recheck persisted state, generation, and lease before side effects" },
+    { "id": "NFR2.4", "status": "OK", "target": "Step Functions deadline/notification waits and 1-minute EventBridge Scheduler reconciliation" },
+    { "id": "NFR2.5", "status": "OK", "target": "Dispatcher Lambda, AWS IoT Core QoS 1, stable commandId, and notification TTL" },
+    { "id": "NFR2.6", "status": "OK", "target": "API Gateway/Lambda state responses and CloudFront browser UI surface server status and notification result" },
+    { "id": "NFR2.7", "status": "OK", "target": "DynamoDB operation receipt TTL and Lambda request validation" },
+    { "id": "NFR2.8", "status": "OK", "target": "DynamoDB on-demand capacity for the defined single-venue and single-active-session bound" },
+    { "id": "NFR2.9", "status": "OK", "target": "EventBridge Scheduler invokes bounded candidate reconciliation; no unbounded full-table scan" },
+    { "id": "NFR2.10", "status": "OK", "target": "Lambda timeout and API Gateway integration limits keep synchronous operation handling bounded" },
+    { "id": "NFR2.11", "status": "N/A", "target": "No multi-region or DR infrastructure is required by the approved initial-scope reliability requirements" },
+    { "id": "NFR3.1", "status": "OK", "target": "Cognito JWT authorizer and server-side venue grant lookup" },
+    { "id": "NFR3.2", "status": "OK", "target": "HTTPS API Gateway, CloudFront TLS, AWS service TLS, and MQTT TLS" },
+    { "id": "NFR3.3", "status": "OK", "target": "GitHub Actions OIDC role, managed secret boundaries, and secret-free logs/outputs" },
+    { "id": "NFR3.4", "status": "OK", "target": "Resource-scoped Lambda IAM for table, state machine, scheduler, and fixed IoT topic" },
+    { "id": "NFR4.1", "status": "OK", "target": "CloudFront static asset delivery and bounded API/Lambda request path" },
+    { "id": "NFR4.2", "status": "N/A", "target": "No additional performance-specific AWS capacity or caching resource is needed for the initial one-venue bound" },
+    { "id": "NFR5.1", "status": "OK", "target": "API Gateway request ID and CloudWatch structured Lambda logs" },
+    { "id": "NFR5.2", "status": "OK", "target": "CloudWatch structured operation events include session, route, result, version, generation, and timestamps" },
+    { "id": "NFR5.3", "status": "OK", "target": "CloudWatch metrics for lease expiry, wake repair, reconciliation, and unknown notification results" },
+    { "id": "NFR5.4", "status": "OK", "target": "CloudWatch Logs 7-day retention and dashboard dimensions without sensitive payloads" },
+    { "id": "NFR6.1", "status": "OK", "target": "GitHub Actions runs unit and boundary integration tests without AWS credentials" },
+    { "id": "NFR6.2", "status": "OK", "target": "GitHub Actions coverage gate enforces 80% application line coverage" },
+    { "id": "NFR6.3", "status": "OK", "target": "GitHub Actions format/lint/typecheck/build/CDK synth and approval-gated production deploy" }
+  ]
+}
