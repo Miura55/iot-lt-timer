@@ -50,7 +50,9 @@ describe('U2 CDK assertions', () => {
     );
     expect(iot).toHaveLength(2);
     for (const statement of iot) {
-      expect(JSON.stringify(statement.Resource)).toContain('topic/lt-timer/v1/dev/bells/*/commands');
+      expect(JSON.stringify(statement.Resource)).toContain(
+        'topic/lt-timer/v1/dev/bells/*/commands',
+      );
     }
   });
   it('discovers the account IoT endpoint from the dispatcher role without a Lambda env parameter', () => {

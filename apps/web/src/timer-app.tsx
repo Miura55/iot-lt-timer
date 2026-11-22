@@ -67,7 +67,9 @@ export function App() {
       if (!response.ok)
         throw new Error('状態を取得できませんでした。ネットワークとログインを確認してください。');
       if (!response.headers.get('content-type')?.includes('application/json'))
-        throw new Error('状態APIからJSON以外の応答が返りました。CloudFrontとAPIの設定を確認してください。');
+        throw new Error(
+          '状態APIからJSON以外の応答が返りました。CloudFrontとAPIの設定を確認してください。',
+        );
       const result = (await response.json()) as StateResponse;
       if (sequence !== requestSequence.current) return;
       setState(result);

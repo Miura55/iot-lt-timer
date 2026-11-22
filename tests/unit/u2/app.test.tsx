@@ -3,10 +3,10 @@ import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { confirmSignIn, fetchAuthSession, signIn, signOut } from '@aws-amplify/auth';
+import { confirmSignIn, fetchAuthSession, signIn, signOut } from 'aws-amplify/auth';
 import { App } from '../../../apps/web/src/timer-app.js';
 
-vi.mock('@aws-amplify/auth', () => ({
+vi.mock('aws-amplify/auth', () => ({
   confirmSignIn: vi.fn(),
   fetchAuthSession: vi.fn(),
   signIn: vi.fn(),
@@ -17,6 +17,7 @@ function response(body: unknown, status = 200) {
   return {
     ok: status >= 200 && status < 300,
     status,
+    headers: new Headers({ 'content-type': 'application/json' }),
     json: async () => body,
   } as Response;
 }
@@ -43,9 +44,11 @@ describe('LT timer app', () => {
   });
 
   beforeEach(() => {
-    vi.mocked(fetchAuthSession).mockResolvedValue({
-      tokens: { idToken: { toString: () => 'test-jwt' } },
-    } as never);
+    vi.mocked(fetchAuthSession)
+      .mockResolvedValueOnce({} as never)
+      .mockResolvedValue({
+        tokens: { idToken: { toString: () => 'test-jwt' } },
+      } as never);
     vi.mocked(signOut).mockResolvedValue(undefined);
   });
 
@@ -53,7 +56,7 @@ describe('LT timer app', () => {
     vi.mocked(signIn).mockRejectedValueOnce(new Error('bad credentials'));
     render(<App />);
     const user = userEvent.setup();
-    await user.type(screen.getByTestId('login-email-input'), 'speaker@example.com');
+    await user.type(await screen.findByTestId('login-email-input'), 'speaker@example.com');
     await user.type(screen.getByTestId('login-password-input'), 'wrong-password');
     await user.click(screen.getByTestId('login-submit-button'));
     expect((await screen.findByRole('alert')).textContent).toContain('ログインできません');
@@ -67,7 +70,7 @@ describe('LT timer app', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(emptyState)));
     render(<App />);
     const user = userEvent.setup();
-    await user.type(screen.getByTestId('login-email-input'), 'speaker@example.com');
+    await user.type(await screen.findByTestId('login-email-input'), 'speaker@example.com');
     await user.type(screen.getByTestId('login-password-input'), 'temporary-password');
     await user.click(screen.getByTestId('login-submit-button'));
     expect(await screen.findByText('初回ログインのため新しいパスワードを設定')).toBeTruthy();
@@ -88,7 +91,7 @@ describe('LT timer app', () => {
     vi.mocked(signIn).mockResolvedValueOnce({ nextStep: { signInStep: 'DONE' } } as never);
     render(<App />);
     const user = userEvent.setup();
-    await user.type(screen.getByTestId('login-email-input'), 'speaker@example.com');
+    await user.type(await screen.findByTestId('login-email-input'), 'speaker@example.com');
     await user.type(screen.getByTestId('login-password-input'), 'secure-password');
     await user.click(screen.getByTestId('login-submit-button'));
     await screen.findByText('タイマーを設定');
@@ -123,7 +126,7 @@ describe('LT timer app', () => {
     vi.mocked(signIn).mockResolvedValueOnce({ nextStep: { signInStep: 'DONE' } } as never);
     render(<App />);
     const user = userEvent.setup();
-    await user.type(screen.getByTestId('login-email-input'), 'speaker@example.com');
+    await user.type(await screen.findByTestId('login-email-input'), 'speaker@example.com');
     await user.type(screen.getByTestId('login-password-input'), 'secure-password');
     await user.click(screen.getByTestId('login-submit-button'));
     expect(await screen.findByText('送信受付済み')).toBeTruthy();
@@ -145,7 +148,7 @@ describe('LT timer app', () => {
     vi.mocked(signIn).mockResolvedValueOnce({ nextStep: { signInStep: 'DONE' } } as never);
     render(<App />);
     const user = userEvent.setup();
-    await user.type(screen.getByTestId('login-email-input'), 'speaker@example.com');
+    await user.type(await screen.findByTestId('login-email-input'), 'speaker@example.com');
     await user.type(screen.getByTestId('login-password-input'), 'secure-password');
     await user.click(screen.getByTestId('login-submit-button'));
     await screen.findByText('タイマーを設定');
