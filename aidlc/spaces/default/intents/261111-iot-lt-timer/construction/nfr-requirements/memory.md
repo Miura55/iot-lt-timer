@@ -5,6 +5,7 @@
 <!-- example: 2026-05-29T10:14:32Z — chose REST over GraphQL; the consuming team only needs CRUD, revisit if subscriptions land -->
 - 2026-11-11T17:05:55Z [unit u1-integrated-timer] — 既存認証基盤なしという回答を受け、招待制マネージド認証を提案として記載した。本人確認方法・実装先はAWS選定に依存するためInfrastructure Designで確定する。
 - 2026-11-12T14:54:47Z [unit u1-integrated-timer] — 利用者が承認した65秒回復目標の起点は通知expiresAt。通知なしのdeadline回復はdeadline+65秒、終了通知の回復はexpiresAt+65秒（deadline+70秒）として区別する。
+- 2026-11-12T18:56:01Z [unit u2-timer-controls] — NFR2の65秒回復目標と60秒照合を継承し、resumeでのwake登録不明・欠落、lease期限切れ操作の照合、U1 OperationReceipt共有を追加要件にした。U2は1会場・active session 1件の初版上限を変えない。
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->

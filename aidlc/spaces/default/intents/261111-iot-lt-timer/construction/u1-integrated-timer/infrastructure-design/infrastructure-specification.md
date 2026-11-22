@@ -2,7 +2,7 @@
 
 入力: [U1性能設計](../nfr-design/performance-design.md)、[U1セキュリティ設計](../nfr-design/security-design.md)、[U1拡張・容量設計](../nfr-design/scalability-design.md)、[U1信頼性設計](../nfr-design/reliability-design.md)、[U1観測性設計](../nfr-design/observability-design.md)、[U1論理コンポーネント](../nfr-design/logical-components.md)、[ドメイン構成](../../../inception/domain-design/components.md)、[U1機能仕様](../functional-design/functional-spec.md)、[連携仕様C1/C2/C3](../../../inception/contract-design/contract-summary.md)。
 
-初期対象は東京リージョン、1会場・ベル1台・同時1セッションである。月額500円を目安として小さく構成するが、実利用量・ログ量・Step Functions遷移数により変動し、予算内を保証しない。金額アラートを設定し、超過時の自動停止は行わない。
+初期対象は東京リージョン、1会場・ベル1台・同時1セッションである。月額500円は費用設計の目安とし、実利用量・ログ量・Step Functions遷移数により変動する。依頼者はクレジットで利用料を賄うため、AWS Budgetsによる金額アラートは作成しない。超過時の自動停止もしない。
 
 ## Deployment
 
@@ -19,7 +19,7 @@
 | Wait and recovery | Step Functions Standardがsession deadlineと各notification scheduledAtのWaitを行い、LambdaでDynamoDB状態を再確認して処理する。EventBridge Schedulerの1分周期が独立照合Lambdaを起動する。 | wait起床を時間管理に使い、永続状態を正本にする。期限起床消失時も定期照合で復旧できる。 |
 | Bell transport | Dispatcher Lambdaの実行ロールは環境固定のAWS IoT Core `commands` topicへの`iot:Publish`のみ許可。QoS 1、retain=false。Pico証明書のIoT policyはデバイス固有の接続・購読topicに限定する。 | C3契約に従い、AWS受付と受信・物理鳴動を区別する。 |
 | Secrets and encryption | TLSを使用し、DynamoDB・S3・CloudWatch Logsの暗号化を有効にする。IoT秘密鍵はPico内で管理し、アプリやログへ取り込まない。GitHub ActionsはOIDC、長期AWSキー不使用。 | 鍵・token・payloadをソース、CDK output、ログに含めない。 |
-| Cost controls | AWS Budgetsで月額500円相当の通知を設定し、80%・100%でメール通知する。通知先登録が必要。Cost allocation tag `Project=iot-lt-timer`, `Environment=dev|prod` を付ける。 | クレジット適用前の利用額を把握する。Budgetは通知のみで、リソースの停止・削除をしない。 |
+| Cost controls | AWS Budgetsアラームは作成しない。Cost allocation tag `Project=iot-lt-timer`, `Environment=dev|prod` を付ける。 | 月額500円は設計上の目安であり、利用者はクレジットで利用料を賄う。 |
 
 ## Infrastructure Services
 

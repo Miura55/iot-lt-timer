@@ -27,7 +27,6 @@
 | Notification outcome unknown | 終端status=unknownが1件以上 | Warning | CloudWatch dashboardで対象を確認し、イベント運用者がベルを現地確認。unknownは終端状態でありsession完了を妨げない。 |
 | Reconciliation unavailable | 連続して照合Lambda失敗またはScheduler invoke失敗 | Critical | CloudWatch alarm。保存状態から手動復旧。 |
 | IoT publish rejected | 認可・endpoint・publish失敗 | Warning | CloudWatch alarm/dashboard。AWS受付を鳴動成功として扱わない。 |
-| Budget threshold | 月額予算の80% / 100% | Warning / Critical | AWS Budgets email subscriber。配備時に連絡先設定が必要。 |
 
 ## SLIs / SLOs
 

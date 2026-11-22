@@ -16,6 +16,9 @@
       "path": "apps/api/src/config.ts"
     },
     {
+      "path": "apps/api/src/iot-endpoint.ts"
+    },
+    {
       "path": "apps/api/src/main.ts"
     },
     {
@@ -40,9 +43,6 @@
       "path": "apps/api/src/timer/wake-registrar.ts"
     },
     {
-      "path": "apps/api/dist/"
-    },
-    {
       "path": "apps/web/index.html"
     },
     {
@@ -64,9 +64,6 @@
       "path": "apps/web/src/timer-app.tsx"
     },
     {
-      "path": "apps/web/dist/"
-    },
-    {
       "path": "infra/cdk.json"
     },
     {
@@ -80,9 +77,6 @@
     },
     {
       "path": "infra/src/timer-stack.ts"
-    },
-    {
-      "path": "infra/dist/"
     },
     {
       "path": "package.json"
@@ -112,9 +106,6 @@
       "path": "packages/domain/src/wake.ts"
     },
     {
-      "path": "packages/domain/dist/"
-    },
-    {
       "path": "tests/unit/u1/domain.test.ts"
     },
     {
@@ -140,6 +131,9 @@
     },
     {
       "path": "tests/unit/u1/wake-registrar.test.ts"
+    },
+    {
+      "path": "tests/unit/u1/config.test.ts"
     }
   ]
 }

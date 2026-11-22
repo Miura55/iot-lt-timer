@@ -1,15 +1,23 @@
 {
   "name": "iot-lt-timer",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "infra"],
+  "engines": {
+    "node": "22.23.5"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "infra"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace @lt-timer/web",
     "build": "npm run build --workspace @lt-timer/domain && npm run build --workspace @lt-timer/api && npm run build --workspace @lt-timer/web && npm run build --workspace @lt-timer/infra",
-    "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p packages/domain/tsconfig.json && tsc --noEmit -p infra/tsconfig.json",
+    "typecheck": "npm run build --workspace @lt-timer/domain && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p packages/domain/tsconfig.json && tsc --noEmit -p infra/tsconfig.json",
     "lint": "eslint apps packages infra tests",
     "format:check": "prettier --check apps packages infra tests",
     "test": "vitest",
     "test:u1": "vitest run tests/unit/u1 tests/integration/u1",
+    "test:u2": "vitest run tests/unit/u2 tests/integration/u2",
     "test:coverage": "vitest run --coverage",
     "cdk:test": "vitest run tests/unit/u1/infra"
   },
@@ -17,18 +25,19 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
-    "@types/node": "^22.10.2",
     "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/parser": "^8.72.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.8",
     "aws-cdk-lib": "^2.177.0",
     "constructs": "^10.4.2",
     "eslint": "^9.17.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "@vitest/coverage-v8": "^2.1.8"
+    "vitest": "^2.1.8"
   }
 }
